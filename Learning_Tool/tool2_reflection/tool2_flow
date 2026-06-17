@@ -1,0 +1,47 @@
+
+
+
+User opens tool The state is initialisation
+
+user answers all the metadata fields leaving blank that which they do not know 
+    1. Primary key is generated from 1 for now
+
+user presses a button which adds the relevant fields this also checks if not null fields for type checks we can ignore for now the state is metadata checks
+user can edit fields and update them using that button after that the state is waiting for user inputs
+
+Box to paste content into
+a button which sends content and reflection to the relevant variables which get loaded into the API call 
+need to handle if nothing is written into either or both of the 2 boxes to prevent API Errors
+The state is now waiting for question generation
+
+A question box Exists with the question generated from API call
+The state is now New reflection
+additional reflectioon box Exists and can write into that 
+button to combine both reflections producing a final reflection box with both reflections
+The state is now finished reflections
+
+A finish reflection button which shows the fields and the combined reflection once initially pressed then pressed again to send off
+Then the reflection is logged
+The state is Tool 2 session is finished
+
+1. A green border around it 
+2. Yes the user sees question loading in italics
+3. A message will appear saying question generation failed please try later then the tool will be exited because if the call fails when input validation is present then must be an error on API side
+4. read only
+5. Literal concaetnation claude is not involved in the flow at this stage a seperator would be ADDTIONAL REFLECTION
+6.Press is a lock 
+
+
+
+
+i be honest question just feels as if its making me loop back in the circle i already talked about didnt really give me something to attach the second part "are they truly separate, or is something else happening there?" to it was just like ssaying what i already wrote
+
+
+new session of design 17th june 2026
+
+Want to improve the UI color scheme
+
+1. Black backdrop
+2. Boxes with a blue highlighted border to it a 3D effect
+3. larger text size for questions
+4. Brighter buttons

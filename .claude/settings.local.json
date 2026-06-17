@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(claude update *)",
+      "Bash(python -c \"from db.database import init_db; init_db\\(\\); print\\('init_db ran successfully'\\)\")",
+      "Skill(run)",
+      "PowerShell(Start-Process python -ArgumentList \"C:\\\\Users\\\\isab3\\\\OneDrive\\\\Documents\\\\Coding & Tech\\\\Personal Projects\\\\Learning tool\\\\Learning_Tool\\\\main.py\" -WorkingDirectory \"C:\\\\Users\\\\isab3\\\\OneDrive\\\\Documents\\\\Coding & Tech\\\\Personal Projects\\\\Learning tool\\\\Learning_Tool\")",
+      "PowerShell(Add-Type -AssemblyName System.Windows.Forms; Start-Sleep -Seconds 2; $screen = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds; $bitmap = New-Object System.Drawing.Bitmap\\($screen.Width, $screen.Height\\); $graphics = [System.Drawing.Graphics]::FromImage\\($bitmap\\); $graphics.CopyFromScreen\\($screen.Location, [System.Drawing.Point]::Empty, $screen.Size\\); $bitmap.Save\\(\"$env:TEMP\\\\screenshot.png\"\\); Write-Output \"Screenshot saved to $env:TEMP\\\\screenshot.png\")"
+    ]
+  }
+}
