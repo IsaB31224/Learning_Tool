@@ -8,6 +8,113 @@ from tool2_reflection.logic import generate_context_questions, generate_final_qu
 from db.database import get_connection
 
 
+_STYLESHEET = """
+    QWidget {
+        background-color: #0f111a;
+        color: #e2e8f0;
+        font-family: "Segoe UI", Arial, sans-serif;
+        font-size: 12px;
+    }
+    QScrollArea {
+        border: none;
+        background-color: transparent;
+    }
+    QLabel {
+        color: #93c5fd;
+        font-size: 12px;
+        font-weight: 600;
+        background-color: transparent;
+        padding: 4px 0px;
+    }
+    QTextEdit {
+        background-color: #1c2233;
+        color: #e2e8f0;
+        border: 2px solid #2d3a55;
+        border-radius: 8px;
+        padding: 8px;
+        font-size: 12px;
+    }
+    QTextEdit:focus {
+        border: 2px solid #3b82f6;
+    }
+    QTextEdit[readOnly="true"] {
+        background-color: #161b27;
+        color: #93c5fd;
+        border: 2px solid #3b82f6;
+        font-size: 14px;
+        font-weight: 600;
+    }
+    QLineEdit {
+        background-color: #1c2233;
+        color: #e2e8f0;
+        border: 2px solid #2d3a55;
+        border-radius: 8px;
+        padding: 6px 10px;
+        font-size: 12px;
+    }
+    QLineEdit:focus {
+        border: 2px solid #3b82f6;
+    }
+    QDateEdit {
+        background-color: #1c2233;
+        color: #e2e8f0;
+        border: 2px solid #2d3a55;
+        border-radius: 8px;
+        padding: 6px 10px;
+    }
+    QDateEdit:focus {
+        border: 2px solid #3b82f6;
+    }
+    QDateEdit::drop-down {
+        border: none;
+        background-color: #2563eb;
+        border-radius: 4px;
+        width: 20px;
+    }
+    QPushButton {
+        background-color: #2563eb;
+        color: #ffffff;
+        border: none;
+        border-radius: 8px;
+        padding: 10px 24px;
+        font-size: 13px;
+        font-weight: 700;
+    }
+    QPushButton:hover {
+        background-color: #3b82f6;
+    }
+    QPushButton:pressed {
+        background-color: #1d4ed8;
+    }
+    QPushButton:disabled {
+        background-color: #1e2a3a;
+        color: #4b5563;
+    }
+    QPushButton#confirmBtn {
+        background-color: #059669;
+    }
+    QPushButton#confirmBtn:hover {
+        background-color: #10b981;
+    }
+    QPushButton#confirmBtn:pressed {
+        background-color: #047857;
+    }
+    QScrollBar:vertical {
+        background-color: #161b27;
+        width: 8px;
+        border-radius: 4px;
+    }
+    QScrollBar::handle:vertical {
+        background-color: #3b82f6;
+        border-radius: 4px;
+        min-height: 24px;
+    }
+    QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+        height: 0;
+    }
+"""
+
+
 class _Worker(QObject):
     finished = pyqtSignal(object)
     error = pyqtSignal(str)
@@ -33,6 +140,7 @@ class Tool2Widget(QWidget):
         self._build_ui()
 
     def _build_ui(self):
+        self.setStyleSheet(_STYLESHEET)
         root = QVBoxLayout(self)
 
         scroll = QScrollArea()
@@ -167,6 +275,7 @@ class Tool2Widget(QWidget):
         layout.addWidget(self.finish_btn)
 
         self.confirm_btn = QPushButton("Confirm & Save")
+        self.confirm_btn.setObjectName("confirmBtn")
         self.confirm_btn.clicked.connect(self._on_confirm)
         layout.addWidget(self.confirm_btn)
 
@@ -199,7 +308,7 @@ class Tool2Widget(QWidget):
 
         for field in [self.media_field, self.author_field, self.topic_field, self.character_field]:
             if field.text().strip():
-                field.setStyleSheet("border: 2px solid green;")
+                field.setStyleSheet("border: 2px solid #10b981;")
 
         self.metadata_btn.setText("Update Metadata")
         self._input_section.show()

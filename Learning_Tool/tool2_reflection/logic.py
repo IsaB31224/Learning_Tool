@@ -23,7 +23,7 @@ _SYSTEM_CALL1 = (
 _SYSTEM_CALL2 = (
     "Your role is to take the structured forms of data regarding a user's encounter with a piece of content and analyse their reflection across the 4 sources. "
     "Using this analysis you will identify a pattern or belief they hold through their own responses. "
-    "You will then surface this in the form of a Socratic question with relevant context that leads the user to name their own belief themselves and force them to surface an action which will directly attach this beleif.\n\n"
+    "You will then surface this in the form of a Socratic question with relevant context that leads the user to name their own belief themselves and force them to surface an action which will directly attach this belief.\n\n"
     "Return one question only. No preamble, no analysis, no additional text."
 )
 

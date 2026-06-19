@@ -3,6 +3,33 @@
 
 ---
 
+## Session 6 — June 2026
+
+### What was done
+- UI colour theme implemented across `tool2_reflection/ui.py`
+- Dark theme applied via single `_STYLESHEET` constant — cascades to all widgets
+
+### Design decisions
+- Background: near-black `#0f111a`
+- Input boxes: dark navy `#1c2233`, subtle blue border, brightens to solid blue on focus
+- Question displays (read-only): 14px bold text, light blue `#93c5fd`, permanent solid blue `#3b82f6` border — visually distinct from writable boxes
+- Buttons: bright blue `#2563eb`, bold, rounded corners, hover/press states
+- Confirm & Save button: green `#059669` to distinguish it as the terminal action
+- Labels: light blue `#93c5fd`
+- Scrollbar: thin 8px, blue handle
+- Metadata confirmed border updated from plain green to `#10b981` to match the theme
+
+### State of the code
+- Dark theme complete and validated
+- Two-call pipeline complete and tested
+- All prompt fixes done
+- UI colour theme done
+
+### Next session
+- No outstanding items — full re-test of the tool end to end after all prompt and UI changes
+
+---
+
 ## Session 5 — June 2026
 
 ### What was done
@@ -22,16 +49,16 @@
 
 ### State of the code
 - Two-call pipeline validated and working
-- Prompt for Call 1 already updated with "do not suggest specific situations, force them to surface one themselves" (done inline during test)
-- Remaining prompt changes (Call 1 format, Call 2 action forcing, situation recollection) — pending next session
+- All four prompt fixes completed — Call 1 and Call 2 system prompts updated
 - UI colour theme — pending John's colour decisions
 
+### Prompt fixes completed
+- Call 1 Q1: no longer suggests specific situations — forces the user to surface one themselves
+- Call 1: explicit situation recollection added — user prompted to name exact moments, exact calls, exact specifics rather than general event flow
+- Call 2: action-naming instruction added — final question now prompts the user to name a concrete action, not just surface the belief
+
 ### Next session
-- Rewrite Call 1 question 1 target to enforce situation surfacing without assumption
-- Add explicit situation recollection instruction to Call 1 prompting
-- Add action-naming instruction to Call 2 system prompt
-- John to dictate colour theme — implement across UI
-- Re-test after prompt changes
+- John to dictate colour theme — implement across `tool2_reflection/ui.py`
 
 ---
 

@@ -1,10 +1,3 @@
+Does the flow take into account the difference between acknoledging the reflection is positive and probe further handling that response or does it only focus on reflecting on a negative
 
-1.In the questoion it refrences where im at work even thought i dont work but then the general theme of family is applicable to me 
-    So we now need to improve upon question ones format
-2. Need to improve visually too much of same colour theme i will dictate new colours
-    I will decide the colour theme and claude will implement
-3. Final question i wrote the actions i need to take but the question didnt prompt me to
-    Add something which forces the action that needs to be taken to the question prompt 
-4.When im narrating an event comparison i had to force myself to shift my reflection from me recalling the general flow of events to exact specifics of the situation exact calls made me surface what truly was going On 
-    Add explicit situation recollection to prompting
-5. I struggle to judge whether i can write more in the reflection or that is sufficient this is not a program fault
+The reflection tool needs to take into account readings and reflections that cant be answered in that moment
