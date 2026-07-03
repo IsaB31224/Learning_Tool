@@ -4,6 +4,7 @@ from PyQt6.QtWidgets import (
 )
 from db.database import init_db
 from tool2_reflection.ui import Tool2Widget
+from medium import Hash
 
 
 def placeholder(name):
@@ -30,6 +31,7 @@ class MainWindow(QMainWindow):
 
 def main():
     init_db()
+    Hash.hashmap_initialise()
     app = QApplication(sys.argv)
     window = MainWindow()
     window.show()

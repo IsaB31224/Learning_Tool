@@ -3,7 +3,7 @@ CREATE TABLE Reflections (
     Given_prompt            TEXT        NOT NULL,
     Reflection_Writing      TEXT        NOT NULL,
     Date                    TEXT        NOT NULL,
-    Source_Author           TEXT,
+    Source_Name                TEXT,
     Media                   TEXT        NOT NULL,
     Topic_of_discussion     TEXT,
     Abstract_topic          TEXT,

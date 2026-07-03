@@ -1,0 +1,22 @@
+
+hashmap is focused one character 
+
+Character_referenced is the hashmap input
+Complete- Algoirhtim to provide index from input Source
+    Algorithim must not be generic word length as Character Names can be similiar in length
+
+    
+Need-list to store each Characters Reflections 
+    
+
+For collision handling we will be using linear probing a linked list which contains each Character of that index
+
+
+
+1. Build a read function
+2. call hash formula for index
+3. acess the value at the index
+4. USe dictionary handling to check for the key and use conditional statement if key dont exist
+
+
+

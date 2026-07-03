@@ -3,6 +3,63 @@
 
 ---
 
+## Session 8 — June 2026
+
+### What was done
+- `get_all_character()` written in `db/database.py` — queries all unique character names from Reflections table using `SELECT Character_referenced FROM Reflections GROUP BY Character_referenced`, returns a list of tuples
+- `hashmap_initialise()` written in `shared/hashmap.py` — calls `get_all_character()`, loops over results, unpacks each tuple with `[0]` to extract the name string, calls `hash_insertion` for each character
+
+### Concepts learned
+- Cursor vs data — `conn.execute()` returns a cursor (a pointer hovering over results), not the results themselves; `fetchall()` is what pulls the rows into a Python list. Without it, the cursor dies when the `with` block closes and the return value is unusable
+- `commit()` on SELECT — `commit()` persists a write to disk; SELECT doesn't write anything so it doesn't need one
+- `get_connection` vs `get_connection()` — referencing a function vs calling it; leaving off the parentheses passes the function object itself, not the connection it returns
+- Tuple indexing — `character[0]` extracts the string from a single-element tuple; `str(tuple)` converts the whole tuple to a string literal, which is wrong
+
+### State of the code
+- `get_all_character()` — complete in `db/database.py`
+- `hashmap_initialise()` — complete in `shared/hashmap.py`
+- `hashmap_initialise()` not yet wired into app startup — hashmap is still empty when the app launches
+
+### Next session
+- Wire `hashmap_initialise()` into app startup so the hashmap is populated before anything tries to read from it
+- Begin thinking through UI for reflection retrieval
+
+---
+
+## Session 7 — June 2026
+
+### What was done
+- Hash map class designed and implemented in full
+- `__init__` method: array of 100 slots initialised to None
+- `hash_insertion(character_name)` implemented — hashes character name to index, creates new dictionary at slot if empty, adds character as new key if collision (separate chaining)
+- `read_character(character_name)` implemented — hashes to index, returns reflection tuples via dictionary lookup, handles missing key with try/except KeyError
+- `delete_reflection(character_name, reflection_id)` implemented across two layers:
+  - Hashmap layer: reads character reflections, takes user input for reflection ID, removes matching tuple from list using list.remove()
+  - Database layer: `delete_reflection(character_name, reflection_id)` in database.py executes DELETE SQL query and commits the change to SQLite
+
+### Design decisions
+- Separate chaining used for collision handling — dictionary at each array slot holds multiple characters keyed by name
+- read_character returns rather than prints to support downstream use by delete and UI
+- Database delete uses two ? placeholders in a single tuple — safe parameterised query, prevents SQL injection
+- No return value from database delete function — nothing meaningful to return from a DELETE operation
+
+### Concepts learned
+- try/except for KeyError handling — why if/else can't catch exceptions that halt execution  
+- conn.execute() vs conn.commit() — execute sends the SQL, commit persists it to disk
+- ? placeholders in SQLite queries — parameterised queries and why they exist
+- list.remove() for in-place list mutation — why loop variable reassignment doesn't modify the underlying list
+
+### State of the code
+- Hash map class: __init__, hash_insertion, read_character, delete_reflection all implemented
+- Database delete function implemented in database.py
+- No UI layer yet — methods untested end to end
+
+### Next session
+- Connect hash map population to SQLite at startup
+- Begin thinking through UI for reflection retrieval
+
+---
+
 ## Session 6 — June 2026
 
 ### What was done

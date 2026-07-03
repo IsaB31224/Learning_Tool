@@ -6,6 +6,7 @@ from PyQt6.QtCore import QDate, QObject, QThread, pyqtSignal
 
 from tool2_reflection.logic import generate_context_questions, generate_final_question
 from db.database import get_connection
+from medium import Hash
 
 
 _STYLESHEET = """
@@ -416,5 +417,10 @@ class Tool2Widget(QWidget):
         )
         conn.commit()
         conn.close()
+
+        character = self.character_field.text().strip()
+        if character:
+            Hash.hash_insertion(character)
+
         QMessageBox.information(self, "Saved", "Reflection logged successfully.")
         self.confirm_btn.setEnabled(False)
