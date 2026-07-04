@@ -3,6 +3,20 @@
 
 ---
 
+## Session 9 — July 2026
+
+### What was done
+- Confirmed `hashmap_initialise()` is wired into app startup: `main.py` calls `init_db()` then `Hash.hashmap_initialise()` (via the `Hash` singleton instance created in `medium.py`) before the `QApplication`/`MainWindow` are constructed
+- Reviewed `get_character_name()` in `db/database.py` — confirmed it returns all reflection rows for a given character
+
+### State of the code
+- Hashmap population at startup — confirmed wired and working, no longer outstanding
+
+### Next session
+- Begin thinking through UI for reflection retrieval
+
+---
+
 ## Session 8 — June 2026
 
 ### What was done

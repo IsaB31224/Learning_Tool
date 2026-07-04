@@ -1,11 +1,12 @@
 from PyQt6.QtWidgets import (
-    QWidget, QVBoxLayout, QFormLayout, QScrollArea,
-    QLabel, QTextEdit, QLineEdit, QDateEdit, QPushButton, QMessageBox
+    QWidget, QVBoxLayout, QHBoxLayout, QFormLayout, QScrollArea,
+    QLabel, QTextEdit, QLineEdit, QDateEdit, QPushButton, QMessageBox,
+    QStackedWidget, QComboBox, QListWidget
 )
 from PyQt6.QtCore import QDate, QObject, QThread, pyqtSignal
 
 from tool2_reflection.logic import generate_context_questions, generate_final_question
-from db.database import get_connection
+from db.database import get_connection, get_all_character
 from medium import Hash
 
 
@@ -71,6 +72,35 @@ _STYLESHEET = """
         background-color: #2563eb;
         border-radius: 4px;
         width: 20px;
+    }
+    QComboBox {
+        background-color: #1c2233;
+        color: #e2e8f0;
+        border: 2px solid #2d3a55;
+        border-radius: 8px;
+        padding: 6px 10px;
+    }
+    QComboBox:focus {
+        border: 2px solid #3b82f6;
+    }
+    QComboBox QAbstractItemView {
+        background-color: #1c2233;
+        color: #e2e8f0;
+        selection-background-color: #2563eb;
+    }
+    QListWidget {
+        background-color: #1c2233;
+        color: #e2e8f0;
+        border: 2px solid #2d3a55;
+        border-radius: 8px;
+        padding: 4px;
+    }
+    QListWidget::item {
+        padding: 6px;
+    }
+    QListWidget::item:selected {
+        background-color: #2563eb;
+        border-radius: 4px;
     }
     QPushButton {
         background-color: #2563eb;
@@ -138,11 +168,54 @@ class Tool2Widget(QWidget):
         self._questions = []
         self._thread = None
         self._worker = None
+        self._delete_reflections = []
         self._build_ui()
 
     def _build_ui(self):
         self.setStyleSheet(_STYLESHEET)
         root = QVBoxLayout(self)
+
+        self._stack = QStackedWidget()
+        root.addWidget(self._stack)
+
+        self._build_menu_page()
+        self._build_add_page()
+        self._build_delete_page()
+        self._build_view_page()
+
+        self._stack.setCurrentIndex(0)
+
+    # --- Page builders ---
+
+    def _build_menu_page(self):
+        page = QWidget()
+        layout = QVBoxLayout(page)
+        layout.addStretch()
+
+        layout.addWidget(QLabel("Tool 2 — Reflection"))
+
+        add_btn = QPushButton("Add Reflection")
+        add_btn.clicked.connect(lambda: self._stack.setCurrentIndex(1))
+        layout.addWidget(add_btn)
+
+        delete_btn = QPushButton("Delete Reflection")
+        delete_btn.clicked.connect(self._on_open_delete)
+        layout.addWidget(delete_btn)
+
+        view_btn = QPushButton("View Reflections")
+        view_btn.clicked.connect(lambda: self._stack.setCurrentIndex(3))
+        layout.addWidget(view_btn)
+
+        layout.addStretch()
+        self._stack.addWidget(page)  # index 0
+
+    def _build_add_page(self):
+        page = QWidget()
+        outer = QVBoxLayout(page)
+
+        back_btn = QPushButton("Back to Menu")
+        back_btn.clicked.connect(lambda: self._stack.setCurrentIndex(0))
+        outer.addWidget(back_btn)
 
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
@@ -150,7 +223,7 @@ class Tool2Widget(QWidget):
         self._layout = QVBoxLayout(container)
         self._layout.setSpacing(12)
         scroll.setWidget(container)
-        root.addWidget(scroll)
+        outer.addWidget(scroll)
 
         self._build_metadata_section()
         self._build_input_section()
@@ -159,7 +232,58 @@ class Tool2Widget(QWidget):
         self._build_combined_section()
         self._build_finish_section()
 
-    # --- Section builders ---
+        self._stack.addWidget(page)  # index 1
+
+    def _build_delete_page(self):
+        page = QWidget()
+        outer = QVBoxLayout(page)
+
+        back_btn = QPushButton("Back to Menu")
+        back_btn.clicked.connect(lambda: self._stack.setCurrentIndex(0))
+        outer.addWidget(back_btn)
+
+        row = QHBoxLayout()
+
+        left = QVBoxLayout()
+        left.addWidget(QLabel("Character"))
+        self.delete_character_combo = QComboBox()
+        self.delete_character_combo.currentTextChanged.connect(self._on_delete_character_selected)
+        left.addWidget(self.delete_character_combo)
+
+        left.addWidget(QLabel("Reflection ID to delete"))
+        self.delete_id_field = QLineEdit()
+        left.addWidget(self.delete_id_field)
+
+        self.delete_btn = QPushButton("Delete")
+        self.delete_btn.clicked.connect(self._on_delete_reflection)
+        left.addWidget(self.delete_btn)
+        left.addStretch()
+
+        right = QVBoxLayout()
+        right.addWidget(QLabel("Reflections"))
+        self.delete_list = QListWidget()
+        right.addWidget(self.delete_list)
+
+        row.addLayout(left, 1)
+        row.addLayout(right, 2)
+        outer.addLayout(row)
+
+        self._stack.addWidget(page)  # index 2
+
+    def _build_view_page(self):
+        page = QWidget()
+        layout = QVBoxLayout(page)
+
+        back_btn = QPushButton("Back to Menu")
+        back_btn.clicked.connect(lambda: self._stack.setCurrentIndex(0))
+        layout.addWidget(back_btn)
+
+        layout.addWidget(QLabel("View Reflections — coming soon"))
+        layout.addStretch()
+
+        self._stack.addWidget(page)  # index 3
+
+    # --- Section builders (Add Reflection page) ---
 
     def _build_metadata_section(self):
         self._meta_section = QWidget()
@@ -283,6 +407,58 @@ class Tool2Widget(QWidget):
         self._layout.addWidget(self._finish_section)
         self._finish_section.hide()
         self.confirm_btn.hide()
+
+    # --- Delete Reflection page ---
+
+    def _on_open_delete(self):
+        self.delete_character_combo.blockSignals(True)
+        self.delete_character_combo.clear()
+        for row in get_all_character():
+            self.delete_character_combo.addItem(row[0])
+        self.delete_character_combo.blockSignals(False)
+
+        self.delete_id_field.clear()
+        if self.delete_character_combo.count() > 0:
+            self._on_delete_character_selected(self.delete_character_combo.currentText())
+        else:
+            self.delete_list.clear()
+            self._delete_reflections = []
+
+        self._stack.setCurrentIndex(2)
+
+    def _on_delete_character_selected(self, character_name):
+        self.delete_list.clear()
+        self._delete_reflections = []
+
+        if not character_name:
+            return
+
+        reflections = Hash.read_character(character_name) or []
+        self._delete_reflections = reflections
+        for row in reflections:
+            reflection_id, media, topic = row[0], row[5], row[6]
+            self.delete_list.addItem(f"ID {reflection_id} — {topic or 'No topic'} ({media})")
+
+    def _on_delete_reflection(self):
+        character_name = self.delete_character_combo.currentText()
+        id_text = self.delete_id_field.text().strip()
+
+        if not character_name:
+            QMessageBox.warning(self, "No Character", "Select a character first.")
+            return
+        if not id_text.isdigit():
+            QMessageBox.warning(self, "Invalid ID", "Enter a valid numeric Reflection ID.")
+            return
+
+        reflection_id = int(id_text)
+        if not any(row[0] == reflection_id for row in self._delete_reflections):
+            QMessageBox.warning(self, "Not Found", "That Reflection ID isn't in the list shown.")
+            return
+
+        Hash.delete_reflection(character_name, reflection_id)
+        self.delete_id_field.clear()
+        self._on_delete_character_selected(character_name)
+        QMessageBox.information(self, "Deleted", f"Reflection {reflection_id} deleted.")
 
     # --- Threading ---
 

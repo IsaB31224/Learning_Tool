@@ -1,4 +1,4 @@
-from db.database import get_all_character, get_character_name
+from db.database import get_all_character, get_character_name, delete_reflection
 
 class HashMap:
 
@@ -48,19 +48,18 @@ class HashMap:
 
             print("Character doesnt exist")
 
-    def delete_reflection(self,character_name):
+    def delete_reflection(self,character_name,reflection_id):
 
+        reflections=self.read_character(character_name) #provides characters reflections
 
-        delete_choice=self.read_character(character_name) #provides characters reflections
-        print(delete_choice)
-        id_choice=input("Enter which Reflection ID you want to delete")#
+        for row in reflections:
 
+            if row[0]==reflection_id:
+                reflections.remove(row)
+                break
 
-        for value in delete_choice:
+        delete_reflection(character_name,reflection_id)
 
-            if value[0]==id_choice:
-                value=delete_choice.remove(value)
-     
 
     def hashmap_initialise(self):
 

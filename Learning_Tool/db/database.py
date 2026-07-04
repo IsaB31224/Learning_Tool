@@ -43,7 +43,7 @@ def delete_reflection(character_name,reflection_id):
             )
             conn.commit()
 
-def get_all_character():
+def get_all_character(): #gets all characters
     with get_connection() as conn:
         rows=conn.execute(
 

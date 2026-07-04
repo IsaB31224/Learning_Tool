@@ -8,7 +8,8 @@
       "PowerShell(Add-Type -AssemblyName System.Windows.Forms; Start-Sleep -Seconds 2; $screen = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds; $bitmap = New-Object System.Drawing.Bitmap\\($screen.Width, $screen.Height\\); $graphics = [System.Drawing.Graphics]::FromImage\\($bitmap\\); $graphics.CopyFromScreen\\($screen.Location, [System.Drawing.Point]::Empty, $screen.Size\\); $bitmap.Save\\(\"$env:TEMP\\\\screenshot.png\"\\); Write-Output \"Screenshot saved to $env:TEMP\\\\screenshot.png\")",
       "PowerShell(Start-Process python -ArgumentList \"main.py\" -WorkingDirectory \"C:\\\\Users\\\\isab3\\\\OneDrive\\\\Documents\\\\Coding & Tech\\\\Personal Projects\\\\Learning tool\\\\Learning_Tool\" -PassThru)",
       "PowerShell(Get-Process *)",
-      "PowerShell(Start-Process python -ArgumentList \"main.py\" -WorkingDirectory \"C:\\\\Users\\\\isab3\\\\OneDrive\\\\Documents\\\\Coding & Tech\\\\Personal Projects\\\\Learning tool\\\\Learning_Tool\")"
+      "PowerShell(Start-Process python -ArgumentList \"main.py\" -WorkingDirectory \"C:\\\\Users\\\\isab3\\\\OneDrive\\\\Documents\\\\Coding & Tech\\\\Personal Projects\\\\Learning tool\\\\Learning_Tool\")",
+      "Bash(python -c \"import PyQt6\")"
     ]
   }
 }
