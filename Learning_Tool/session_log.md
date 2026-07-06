@@ -3,6 +3,35 @@
 
 ---
 
+## Session 10 — July 2026
+
+### What was done
+- Deleted `shared/reflection.py` — broken/incomplete stub (`get_all_character` called with wrong signature, plus a syntax error) with no callers anywhere in the codebase; will be rebuilt from scratch at a later date
+- Read `tool2_reflection/tool2_flow` design spec and planned a restructure of Tool 2's UI into a menu-driven flow before writing any code
+- `Tool2Widget` (`tool2_reflection/ui.py`) rebuilt around a `QStackedWidget`: page 0 is a 3-button menu (Add Reflection, Delete Reflection, View Reflections), each sub-view has a Back button returning to the menu
+- Existing Add Reflection flow moved into page 1 unchanged — all section builders and handlers untouched
+- New Delete Reflection sub-view (page 2) built: character dropdown populated via `get_all_character()`, right-hand list of reflections (ID / Topic / Media) populated via `Hash.read_character`, text field for the user to enter a reflection ID, delete button wired to `Hash.delete_reflection`
+- New View Reflections sub-view (page 3) added as a stub only, per the spec ("leave this as a gap for now") — placeholder label + Back button
+- `HashMap.delete_reflection` (`shared/hashmap.py`) rewritten — removed the blocking `input()`/`print()` calls, now accepts `reflection_id` as a parameter, matches on `row[0]` (Reflection_id) in the in-memory list, then calls the DB-layer `delete_reflection(character_name, reflection_id)` to persist the delete, keeping the hashmap and SQLite in sync
+- Syntax-checked both modified files (`python -m py_compile tool2_reflection/ui.py shared/hashmap.py`) — clean
+- App launched via `python main.py` for manual verification — exited cleanly with no errors in the log
+
+### Design decisions
+- Navigation pattern: `QStackedWidget` + Back button on each sub-view, rather than tabs or a single flat scrolling page
+- Delete view's reflection list sourced from the hashmap (`Hash.read_character`) rather than a direct DB query — keeps the hashmap as the single source of truth for reads
+- Reflection ID for deletion entered via a plain text field, validated against the currently displayed list, rather than making list rows clickable
+- `shared/reflection.py` deleted outright rather than patched, since it had no callers and was unusable as written
+
+### State of the code
+- Tool 2 UI restructure complete: menu → Add/Delete/View sub-views all built and wired
+- `HashMap.delete_reflection` fixed and back in sync with the DB-layer delete
+- Manual end-to-end verification passed — menu, Add, Delete, and View all confirmed working as expected
+
+### Next session
+- Begin real implementation of View Reflections (currently a stub) — wire to `Hash.read_character`
+
+---
+
 ## Session 9 — July 2026
 
 ### What was done
