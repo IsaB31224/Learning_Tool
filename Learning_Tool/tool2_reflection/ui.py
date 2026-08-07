@@ -3,11 +3,12 @@ from PyQt6.QtWidgets import (
     QLabel, QTextEdit, QLineEdit, QDateEdit, QPushButton, QMessageBox,
     QStackedWidget, QComboBox, QListWidget
 )
-from PyQt6.QtCore import QDate, QObject, QThread, pyqtSignal
+from PyQt6.QtCore import QDate, QObject, QThread, pyqtSignal, QTimer
 
 from tool2_reflection.logic import generate_context_questions, generate_final_question
 from db.database import get_connection, get_all_character
-from medium import Hash
+from shared.hash_instance import Hash
+from shared.Reflection_timer import Reflection_Timer
 
 
 _STYLESHEET = """
@@ -169,6 +170,11 @@ class Tool2Widget(QWidget):
         self._thread = None
         self._worker = None
         self._delete_reflections = []
+        self._view_reflections = []
+        self._reflection_timer = None
+        self._pause_qtimer = QTimer(self)
+        self._pause_qtimer.setInterval(1000)
+        self._pause_qtimer.timeout.connect(self._on_pause_tick)
         self._build_ui()
 
     def _build_ui(self):
@@ -203,7 +209,7 @@ class Tool2Widget(QWidget):
         layout.addWidget(delete_btn)
 
         view_btn = QPushButton("View Reflections")
-        view_btn.clicked.connect(lambda: self._stack.setCurrentIndex(3))
+        view_btn.clicked.connect(self._on_open_view)
         layout.addWidget(view_btn)
 
         layout.addStretch()
@@ -272,14 +278,34 @@ class Tool2Widget(QWidget):
 
     def _build_view_page(self):
         page = QWidget()
-        layout = QVBoxLayout(page)
+        outer = QVBoxLayout(page)
 
         back_btn = QPushButton("Back to Menu")
         back_btn.clicked.connect(lambda: self._stack.setCurrentIndex(0))
-        layout.addWidget(back_btn)
+        outer.addWidget(back_btn)
 
-        layout.addWidget(QLabel("View Reflections — coming soon"))
-        layout.addStretch()
+        row = QHBoxLayout()
+
+        left = QVBoxLayout()
+        left.addWidget(QLabel("Character"))
+        self.view_character_combo = QComboBox()
+        self.view_character_combo.currentTextChanged.connect(self._on_view_character_selected)
+        left.addWidget(self.view_character_combo)
+
+        left.addWidget(QLabel("Reflections"))
+        self.view_list = QListWidget()
+        self.view_list.currentRowChanged.connect(self._on_view_reflection_selected)
+        left.addWidget(self.view_list)
+
+        right = QVBoxLayout()
+        right.addWidget(QLabel("Details"))
+        self.view_details_box = QTextEdit()
+        self.view_details_box.setReadOnly(True)
+        right.addWidget(self.view_details_box)
+
+        row.addLayout(left, 1)
+        row.addLayout(right, 2)
+        outer.addLayout(row)
 
         self._stack.addWidget(page)  # index 3
 
@@ -365,6 +391,8 @@ class Tool2Widget(QWidget):
         layout = QVBoxLayout(self._reflection_section)
 
         layout.addWidget(QLabel("Final Question — write your reflection in response"))
+        self.pause_label = QLabel("")
+        layout.addWidget(self.pause_label)
         self.additional_reflection_box = QTextEdit()
         layout.addWidget(self.additional_reflection_box)
 
@@ -460,6 +488,60 @@ class Tool2Widget(QWidget):
         self._on_delete_character_selected(character_name)
         QMessageBox.information(self, "Deleted", f"Reflection {reflection_id} deleted.")
 
+    # --- View Reflections page ---
+
+    def _on_open_view(self):
+        self.view_character_combo.blockSignals(True)
+        self.view_character_combo.clear()
+        for row in get_all_character():
+            self.view_character_combo.addItem(row[0])
+        self.view_character_combo.blockSignals(False)
+
+        if self.view_character_combo.count() > 0:
+            self._on_view_character_selected(self.view_character_combo.currentText())
+        else:
+            self.view_list.clear()
+            self.view_details_box.clear()
+            self._view_reflections = []
+
+        self._stack.setCurrentIndex(3)
+
+    def _on_view_character_selected(self, character_name):
+        self.view_list.clear()
+        self.view_details_box.clear()
+        self._view_reflections = []
+
+        if not character_name:
+            return
+
+        reflections = Hash.read_character(character_name) or []
+        self._view_reflections = reflections
+        for row in reflections:
+            reflection_id, media, topic = row[0], row[5], row[6]
+            self.view_list.addItem(f"ID {reflection_id} — {topic or 'No topic'} ({media})")
+
+    def _on_view_reflection_selected(self, row_index):
+        if row_index < 0 or row_index >= len(self._view_reflections):
+            self.view_details_box.clear()
+            return
+
+        row = self._view_reflections[row_index]
+        (reflection_id, given_prompt, reflection_writing, date,
+         source_author, media, topic, abstract_topic, character) = row
+
+        details = (
+            f"Reflection ID: {reflection_id}\n"
+            f"Date: {date}\n"
+            f"Media: {media}\n"
+            f"Source Author: {source_author or '-'}\n"
+            f"Topic: {topic or '-'}\n"
+            f"Character Referenced: {character or '-'}\n\n"
+            f"Given Prompt:\n{given_prompt}\n\n"
+            f"Reflection Writing:\n{reflection_writing}\n\n"
+            f"Notes:\n{abstract_topic or '-'}"
+        )
+        self.view_details_box.setPlainText(details)
+
     # --- Threading ---
 
     def _start_thread(self, fn, *args, on_done, on_error):
@@ -538,6 +620,25 @@ class Tool2Widget(QWidget):
         self.question_box.setPlainText(question)
         self.additional_reflection_box.setPlainText(question)
         self._reflection_section.show()
+        self._start_reflection_pause()
+
+    def _start_reflection_pause(self):
+        self.additional_reflection_box.setReadOnly(True)
+        self._reflection_timer = Reflection_Timer(30)
+        self._update_pause_label()
+        self._pause_qtimer.start()
+
+    def _on_pause_tick(self):
+        if self._reflection_timer.is_timer_finished():
+            self._pause_qtimer.stop()
+            self.pause_label.clear()
+            self.additional_reflection_box.setReadOnly(False)
+        else:
+            self._update_pause_label()
+
+    def _update_pause_label(self):
+        remaining = self._reflection_timer.seconds_remaining()
+        self.pause_label.setText(f"Reflect silently — {remaining}s remaining")
 
     def _on_call_error(self, _message):
         QMessageBox.critical(self, "Error", "Request failed. Please try again.")

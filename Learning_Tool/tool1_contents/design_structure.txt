@@ -1,0 +1,12 @@
+Financial Domain [root node]
+
+    Worries [node]
+    
+    Integrity [node]
+
+    Leadership [node]
+        00:21:55 – Explains how learning to handle the different personalities of individual sheep teaches a leader how to guide different types of human personalities.
+
+        00:23:43 – Details how leadership requires a balance of two traits: being soft and gentle toward those you protect, while remaining brave and courageous against external threats.
+
+        00:24:36 – Discusses how tending sheep inculcates critical leadership values like patience, humility, and bravery.

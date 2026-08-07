@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>logic.py — sequence diagrams</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --page: #f7f6f2;
+    --text: #1a1a1a;
+    --text-muted: #6b6b6b;
+    --border: #dcdad2;
+    --built-border: #0f6e56;
+    --built-bg: #e1f5ee;
+    --built-text: #085041;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1f1f1d;
+      --page: #161615;
+      --text: #e5e3db;
+      --text-muted: #9c9a92;
+      --border: #3a3a37;
+      --built-border: #1d9e75;
+      --built-bg: #085041;
+      --built-text: #9fe1cb;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    background: var(--page);
+    color: var(--text);
+    font-family: "Segoe UI", -apple-system, sans-serif;
+    margin: 0;
+    padding: 2.5rem 1.5rem 4rem;
+  }
+  .wrap { max-width: 980px; margin: 0 auto; }
+  h1 { font-size: 22px; font-weight: 500; margin: 0 0 4px; }
+  .subtitle { color: var(--text-muted); font-size: 14px; margin: 0 0 2rem; }
+  section { margin-bottom: 2.5rem; }
+  h2 { font-size: 17px; font-weight: 500; margin: 0 0 4px; }
+  .caption {
+    font-size: 13.5px;
+    color: var(--text-muted);
+    margin: 0 0 1rem;
+    max-width: 640px;
+  }
+  .diagram-card {
+    background: var(--bg);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem 1rem;
+    overflow-x: auto;
+  }
+  .diagram-card svg { display: block; margin: 0 auto; }
+  .note {
+    font-size: 13.5px;
+    color: var(--text);
+    background: var(--built-bg);
+    border: 1px solid var(--built-border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-top: 1rem;
+    max-width: 640px;
+  }
+  .note strong { color: var(--built-text); font-weight: 500; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>logic.py — sequence diagrams</h1>
+<p class="subtitle">Both calls that tool2_reflection/logic.py makes, from the UI click through to the response landing back in ui.py</p>
+
+<section>
+  <h2>Flow 1 — Generate Questions</h2>
+  <p class="caption">Triggered by the "Generate Questions" button after metadata and initial reflection are submitted.</p>
+  <div class="diagram-card"><div id="seq1"></div></div>
+  <div class="note"><strong>Note —</strong> the UI never calls the API directly. It always hands off to a QThread worker, so the interface stays responsive while Claude is generating a response.</div>
+</section>
+
+<section>
+  <h2>Flow 2 — Generate Final Question</h2>
+  <p class="caption">Triggered after all three question responses are filled in.</p>
+  <div class="diagram-card"><div id="seq2"></div></div>
+  <div class="note"><strong>Note —</strong> this call needs the full accumulated context — source content, initial reflection, and all three question/response pairs — not just the latest input. It's a synthesis step, not another isolated question.</div>
+</section>
+
+</div>
+
+<script type="module">
+import mermaid from 'https://esm.sh/mermaid@11/dist/mermaid.esm.min.mjs';
+const dark = matchMedia('(prefers-color-scheme: dark)').matches;
+await document.fonts.ready;
+mermaid.initialize({
+  startOnLoad: false,
+  theme: 'base',
+  fontFamily: '"Segoe UI", sans-serif',
+  themeVariables: {
+    darkMode: dark,
+    fontSize: '14px',
+    fontFamily: '"Segoe UI", sans-serif',
+    lineColor: dark ? '#9c9a92' : '#73726c',
+    textColor: dark ? '#e5e3db' : '#1a1a1a',
+    actorBkg: dark ? '#085041' : '#e1f5ee',
+    actorBorder: dark ? '#1d9e75' : '#0f6e56',
+    actorTextColor: dark ? '#9fe1cb' : '#085041',
+    signalColor: dark ? '#9c9a92' : '#73726c',
+    signalTextColor: dark ? '#e5e3db' : '#1a1a1a',
+    noteBkgColor: dark ? '#2c2c2a' : '#f1efe8',
+    noteBorderColor: dark ? '#5f5e5a' : '#b4b2a9',
+    noteTextColor: dark ? '#e5e3db' : '#1a1a1a',
+  },
+});
+
+const flow1 = `sequenceDiagram
+  participant UI as Tool2Widget
+  participant W as QThread worker
+  participant L as logic.py
+  participant API as Claude API
+
+  UI->>W: start(source_content, initial_reflection)
+  W->>L: generate_context_questions()
+  L->>API: messages.create(system=CALL1)
+  API-->>L: response.content text
+  L-->>W: 3 questions, split by newline
+  W-->>UI: finished signal, populate boxes`;
+
+const flow2 = `sequenceDiagram
+  participant UI as Tool2Widget
+  participant W as QThread worker
+  participant L as logic.py
+  participant API as Claude API
+
+  UI->>W: start(source_content, initial_reflection, questions, responses)
+  W->>L: generate_final_question()
+  L->>API: messages.create(system=CALL2)
+  API-->>L: response.content text
+  L-->>W: final question string
+  W-->>UI: finished signal, show reflection section`;
+
+const r1 = await mermaid.render('seq1-svg', flow1);
+document.getElementById('seq1').innerHTML = r1.svg;
+
+const r2 = await mermaid.render('seq2-svg', flow2);
+document.getElementById('seq2').innerHTML = r2.svg;
+</script>
+</body>
+</html>

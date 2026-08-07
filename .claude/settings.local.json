@@ -9,7 +9,32 @@
       "PowerShell(Start-Process python -ArgumentList \"main.py\" -WorkingDirectory \"C:\\\\Users\\\\isab3\\\\OneDrive\\\\Documents\\\\Coding & Tech\\\\Personal Projects\\\\Learning tool\\\\Learning_Tool\" -PassThru)",
       "PowerShell(Get-Process *)",
       "PowerShell(Start-Process python -ArgumentList \"main.py\" -WorkingDirectory \"C:\\\\Users\\\\isab3\\\\OneDrive\\\\Documents\\\\Coding & Tech\\\\Personal Projects\\\\Learning tool\\\\Learning_Tool\")",
-      "Bash(python -c \"import PyQt6\")"
+      "Bash(python -c \"import PyQt6\")",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(python -m py_compile tool2_reflection/ui.py)",
+      "Bash(timeout 6 python main.py)",
+      "Bash(echo \"exit=$?\")",
+      "Bash(python main.py)",
+      "Bash(powershell -Command \"Get-Process python* -ErrorAction SilentlyContinue | Select-Object Id,ProcessName,MainWindowTitle\")",
+      "Bash(python -c \"import PyQt6; print\\('ok'\\)\")",
+      "Bash(find . -not -path '*/\\\\.git*' -not -path '*/node_modules/*' -not -path '*/__pycache__/*' -not -path '*/venv/*' -not -path '*/.venv/*')",
+      "Bash(find . -maxdepth 2 -iname \"CLAUDE.md\" -o -iname \"README*\" -o -iname \".cursorrules\")",
+      "Bash(ls -la .cursor)",
+      "Bash(ls -la .github)",
+      "mcp__ide__getDiagnostics",
+      "Bash(python -c \"from tool2_reflection.ui import Tool2Widget; print\\('import OK'\\)\")",
+      "Bash(tasklist)",
+      "Bash(taskkill //PID 15408 //F)",
+      "Bash(python -c \"import PyQt6, anthropic, dotenv; print\\('deps ok'\\)\")",
+      "Artifact",
+      "Bash(python -m py_compile main.py tool1_contents/ui.py)",
+      "Bash(taskkill *)",
+      "Bash(python -m py_compile tool1_contents/ui.py)",
+      "Bash(tasklist //FI \"PID eq 22148\" //V)",
+      "Bash(powershell.exe -NoProfile -Command \"Get-Process -Id 22148 | Select-Object Id, ProcessName, MainWindowTitle, Path\")",
+      "Bash(tasklist *)"
     ]
   }
 }

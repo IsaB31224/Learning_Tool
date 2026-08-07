@@ -4,7 +4,8 @@ from PyQt6.QtWidgets import (
 )
 from db.database import init_db
 from tool2_reflection.ui import Tool2Widget
-from medium import Hash
+from tool1_contents.ui import Tool1Widget
+from shared.hash_instance import Hash
 
 
 def placeholder(name):
@@ -22,7 +23,7 @@ class MainWindow(QMainWindow):
 
         tabs = QTabWidget()
         tabs.addTab(Tool2Widget(), "Reflection")
-        tabs.addTab(placeholder("Tool 1 — Consumption Reflection Layer"), "Consumption")
+        tabs.addTab(Tool1Widget(), "Contents")
         tabs.addTab(placeholder("Tool 3 — Narrative & Character Store"), "Narratives")
         tabs.addTab(placeholder("Tool 4 — Notes Organisation"), "Notes")
 

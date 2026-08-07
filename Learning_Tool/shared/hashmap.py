@@ -67,6 +67,7 @@ class HashMap:
 
         for character in characters:
 
-            self.hash_insertion(character[0])
+            if character[0] is not None:
+                self.hash_insertion(character[0])
 
 

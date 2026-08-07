@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Learning Tool — system container diagram</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --page: #f7f6f2;
+    --text: #1a1a1a;
+    --text-muted: #6b6b6b;
+    --border: #dcdad2;
+
+    --purple-border: #534ab7; --purple-bg: #eeedfe; --purple-text: #3c3489;
+    --blue-border: #185fa5;   --blue-bg: #e6f1fb;   --blue-text: #0c447c;
+    --teal-border: #0f6e56;   --teal-bg: #e1f5ee;   --teal-text: #085041;
+    --coral-border: #993c1d;  --coral-bg: #faece7;  --coral-text: #712b13;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1f1f1d;
+      --page: #161615;
+      --text: #e5e3db;
+      --text-muted: #9c9a92;
+      --border: #3a3a37;
+
+      --purple-border: #afa9ec; --purple-bg: #26215c; --purple-text: #cecbf6;
+      --blue-border: #85b7eb;   --blue-bg: #042c53;   --blue-text: #b5d4f4;
+      --teal-border: #1d9e75;   --teal-bg: #085041;   --teal-text: #9fe1cb;
+      --coral-border: #f0997b;  --coral-bg: #4a1b0c;  --coral-text: #f5c4b3;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    background: var(--page);
+    color: var(--text);
+    font-family: "Segoe UI", -apple-system, sans-serif;
+    margin: 0;
+    padding: 2.5rem 1.5rem 4rem;
+  }
+  .wrap { max-width: 960px; margin: 0 auto; }
+  h1 { font-size: 22px; font-weight: 500; margin: 0 0 4px; }
+  .subtitle { color: var(--text-muted); font-size: 14px; margin: 0 0 1.5rem; }
+
+  .legend {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    font-size: 13px;
+    margin-bottom: 2rem;
+    padding-bottom: 1.25rem;
+    border-bottom: 0.5px solid var(--border);
+    color: var(--text-muted);
+  }
+  .legend span { display: flex; align-items: center; gap: 6px; }
+  .swatch { width: 12px; height: 12px; border-radius: 4px; display: inline-block; border: 1.5px solid; }
+  .line-key { display: flex; align-items: center; gap: 6px; }
+  .line-sample { width: 22px; height: 0; border-top: 1.5px solid var(--text-muted); }
+  .line-sample.dashed { border-top-style: dashed; }
+
+  .diagram-card {
+    background: var(--bg);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem 1rem;
+  }
+  svg text { font-family: "Segoe UI", sans-serif; }
+  .th { font-size: 14px; font-weight: 500; }
+  .ts { font-size: 12px; }
+
+  .note {
+    font-size: 13.5px;
+    color: var(--text);
+    background: var(--teal-bg);
+    border: 1px solid var(--teal-border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-top: 1.5rem;
+    max-width: 700px;
+  }
+  .note + .note { margin-top: 10px; }
+  .note strong { color: var(--teal-text); font-weight: 500; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>Learning Tool — system container diagram</h1>
+<p class="subtitle">Verified against main.py, medium.py, ui.py, and hashmap.py. Placeholder tools excluded.</p>
+
+<div class="legend">
+  <span><span class="swatch" style="border-color:var(--purple-border);background:var(--purple-bg)"></span> structural / entry point</span>
+  <span><span class="swatch" style="border-color:var(--blue-border);background:var(--blue-bg)"></span> UI layer</span>
+  <span><span class="swatch" style="border-color:var(--teal-border);background:var(--teal-bg)"></span> infrastructure</span>
+  <span><span class="swatch" style="border-color:var(--coral-border);background:var(--coral-bg)"></span> external</span>
+  <span class="line-key"><span class="line-sample"></span> runtime call</span>
+  <span class="line-key"><span class="line-sample dashed"></span> startup / import-time only</span>
+</div>
+
+<div class="diagram-card">
+<svg width="100%" viewBox="0 0 800 532" role="img">
+<title>System container diagram with medium.py singleton and startup-time calls shown separately</title>
+<desc>MainWindow leads to Tool2Widget at runtime and also directly initialises db.database and medium.py at startup. Tool2Widget calls logic.py, db.database, and medium.py at runtime. medium.py wraps shared.hashmap as a singleton. shared.hashmap depends on db.database. logic.py connects to the Anthropic API.</desc>
+<defs>
+  <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+    <path d="M2 1L8 5L2 9" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </marker>
+</defs>
+
+<!-- MainWindow -> Tool2Widget (runtime) -->
+<line x1="400" y1="86" x2="400" y2="164" stroke="var(--text-muted)" stroke-width="1" marker-end="url(#arrow)"/>
+
+<!-- MainWindow -> db.database (startup: init_db()) -->
+<path d="M 300 86 L 300 110 L 150 110 L 150 262 L 400 262 L 400 300" fill="none" stroke="var(--purple-border)" stroke-width="1" stroke-dasharray="4 3" marker-end="url(#arrow)"/>
+<text class="ts" x="150" y="128" text-anchor="middle" fill="var(--text-muted)">init_db()</text>
+
+<!-- MainWindow -> medium.py (startup: Hash.hashmap_initialise()) -->
+<path d="M 500 86 L 500 110 L 650 110 L 650 262 L 625 262 L 625 300" fill="none" stroke="var(--purple-border)" stroke-width="1" stroke-dasharray="4 3" marker-end="url(#arrow)"/>
+<text class="ts" x="650" y="128" text-anchor="middle" fill="var(--text-muted)">Hash.hashmap_initialise()</text>
+
+<!-- Tool2Widget -> logic.py, db.database, medium.py (runtime) -->
+<line x1="358" y1="222" x2="215" y2="300" stroke="var(--text-muted)" stroke-width="1" marker-end="url(#arrow)"/>
+<line x1="400" y1="222" x2="400" y2="300" stroke="var(--text-muted)" stroke-width="1" marker-end="url(#arrow)"/>
+<line x1="442" y1="222" x2="585" y2="300" stroke="var(--text-muted)" stroke-width="1" marker-end="url(#arrow)"/>
+
+<!-- logic.py -> Anthropic API -->
+<line x1="175" y1="358" x2="175" y2="434" stroke="var(--text-muted)" stroke-width="1" marker-end="url(#arrow)"/>
+
+<!-- medium.py -> shared.hashmap (instantiation) -->
+<line x1="625" y1="358" x2="625" y2="434" stroke="var(--text-muted)" stroke-width="1" marker-end="url(#arrow)"/>
+<text class="ts" x="625" y="352" text-anchor="middle" fill="var(--text-muted)" dominant-baseline="hanging">Hash = HashMap()</text>
+
+<!-- shared.hashmap -> db.database (import dependency) -->
+<path d="M 540 452 L 500 452 L 500 400 L 485 400 L 485 358" fill="none" stroke="var(--teal-border)" stroke-width="1" stroke-dasharray="4 3" marker-end="url(#arrow)"/>
+<text class="ts" x="500" y="390" text-anchor="end" fill="var(--text-muted)">get_all_character, get_character_name,</text>
+<text class="ts" x="500" y="405" text-anchor="end" fill="var(--text-muted)">delete_reflection</text>
+
+<g>
+  <rect x="280" y="30" width="240" height="56" rx="8" fill="var(--purple-bg)" stroke="var(--purple-border)" stroke-width="1"/>
+  <text class="th" x="400" y="50" text-anchor="middle" dominant-baseline="central" fill="var(--purple-text)">MainWindow</text>
+  <text class="ts" x="400" y="70" text-anchor="middle" dominant-baseline="central" fill="var(--purple-text)">main(), QTabWidget entry point</text>
+</g>
+
+<g>
+  <rect x="290" y="166" width="220" height="56" rx="8" fill="var(--blue-bg)" stroke="var(--blue-border)" stroke-width="1"/>
+  <text class="th" x="400" y="186" text-anchor="middle" dominant-baseline="central" fill="var(--blue-text)">Tool2Widget</text>
+  <text class="ts" x="400" y="206" text-anchor="middle" dominant-baseline="central" fill="var(--blue-text)">PyQt UI, ui.py</text>
+</g>
+
+<g>
+  <rect x="90" y="302" width="170" height="56" rx="8" fill="var(--purple-bg)" stroke="var(--purple-border)" stroke-width="1"/>
+  <text class="th" x="175" y="322" text-anchor="middle" dominant-baseline="central" fill="var(--purple-text)">logic.py</text>
+  <text class="ts" x="175" y="342" text-anchor="middle" dominant-baseline="central" fill="var(--purple-text)">Claude API calls</text>
+</g>
+
+<g>
+  <rect x="315" y="302" width="170" height="56" rx="8" fill="var(--teal-bg)" stroke="var(--teal-border)" stroke-width="1"/>
+  <text class="th" x="400" y="322" text-anchor="middle" dominant-baseline="central" fill="var(--teal-text)">db.database</text>
+  <text class="ts" x="400" y="342" text-anchor="middle" dominant-baseline="central" fill="var(--teal-text)">SQLite, Reflections table</text>
+</g>
+
+<g>
+  <rect x="540" y="302" width="170" height="56" rx="8" fill="var(--purple-bg)" stroke="var(--purple-border)" stroke-width="1"/>
+  <text class="th" x="625" y="322" text-anchor="middle" dominant-baseline="central" fill="var(--purple-text)">medium.py</text>
+  <text class="ts" x="625" y="342" text-anchor="middle" dominant-baseline="central" fill="var(--purple-text)">Hash singleton wrapper</text>
+</g>
+
+<g>
+  <rect x="90" y="434" width="170" height="56" rx="8" fill="var(--coral-bg)" stroke="var(--coral-border)" stroke-width="1"/>
+  <text class="th" x="175" y="454" text-anchor="middle" dominant-baseline="central" fill="var(--coral-text)">Anthropic API</text>
+  <text class="ts" x="175" y="474" text-anchor="middle" dominant-baseline="central" fill="var(--coral-text)">Claude Haiku 4.5</text>
+</g>
+
+<g>
+  <rect x="540" y="434" width="170" height="56" rx="8" fill="var(--teal-bg)" stroke="var(--teal-border)" stroke-width="1"/>
+  <text class="th" x="625" y="454" text-anchor="middle" dominant-baseline="central" fill="var(--teal-text)">shared.hashmap</text>
+  <text class="ts" x="625" y="474" text-anchor="middle" dominant-baseline="central" fill="var(--teal-text)">HashMap class, character index</text>
+</g>
+</svg>
+</div>
+
+<div class="note"><strong>Fix 1 —</strong> <code>medium.py</code> is now its own box. Both <code>main.py</code> and <code>ui.py</code> import <code>Hash</code> from <code>medium.py</code>, not from <code>shared.hashmap</code> directly — <code>medium.py</code> exists solely to create one shared <code>HashMap()</code> instance, likely to avoid a circular import since <code>shared.hashmap</code> itself imports from <code>db.database</code>.</div>
+
+<div class="note"><strong>Fix 2 —</strong> <code>MainWindow</code> (inside <code>main()</code>) now has its own dashed arrows straight to <code>db.database</code> and <code>medium.py</code>, separate from <code>Tool2Widget</code>'s solid runtime arrows to the same two boxes. <code>init_db()</code> and <code>Hash.hashmap_initialise()</code> both run at startup, before <code>MainWindow</code> is even constructed — they don't depend on which tab is open.</div>
+
+</div>
+</body>
+</html>

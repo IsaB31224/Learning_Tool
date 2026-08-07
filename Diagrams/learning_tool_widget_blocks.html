@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Learning Tool — widget blocks</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --page: #f7f6f2;
+    --text: #1a1a1a;
+    --text-muted: #6b6b6b;
+    --border: #dcdad2;
+
+    --built-border: #0f6e56;
+    --built-bg: #e1f5ee;
+    --built-text: #085041;
+
+    --stub-border: #ba7517;
+    --stub-bg: #faeeda;
+    --stub-text: #633806;
+
+    --hidden-border: #b4b2a9;
+    --hidden-bg: #f1efe8;
+    --hidden-text: #5f5e5a;
+
+    --struct-border: #7f77dd;
+    --struct-bg: #eeedfe;
+    --struct-text: #3c3489;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1f1f1d;
+      --page: #161615;
+      --text: #e5e3db;
+      --text-muted: #9c9a92;
+      --border: #3a3a37;
+
+      --built-border: #1d9e75;
+      --built-bg: #085041;
+      --built-text: #9fe1cb;
+
+      --stub-border: #ef9f27;
+      --stub-bg: #412402;
+      --stub-text: #fac775;
+
+      --hidden-border: #5f5e5a;
+      --hidden-bg: #2c2c2a;
+      --hidden-text: #b4b2a9;
+
+      --struct-border: #7f77dd;
+      --struct-bg: #26215c;
+      --struct-text: #cecbf6;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    background: var(--page);
+    color: var(--text);
+    font-family: "Segoe UI", -apple-system, sans-serif;
+    margin: 0;
+    padding: 2.5rem 1.5rem 4rem;
+  }
+  .wrap { max-width: 1100px; margin: 0 auto; }
+  h1 { font-size: 22px; font-weight: 500; margin: 0 0 4px; }
+  .subtitle { color: var(--text-muted); font-size: 14px; margin: 0 0 1.5rem; }
+
+  .legend {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    font-size: 13px;
+    margin-bottom: 2rem;
+    padding-bottom: 1.25rem;
+    border-bottom: 0.5px solid var(--border);
+    color: var(--text-muted);
+  }
+  .legend span { display: flex; align-items: center; gap: 6px; }
+  .swatch { width: 13px; height: 13px; border-radius: 4px; display: inline-block; border-width: 1.5px; border-style: solid; }
+
+  .box {
+    border-radius: 10px;
+    border: 1.5px solid var(--border);
+    background: var(--bg);
+    padding: 14px;
+    margin-bottom: 12px;
+  }
+  .box-label {
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.2px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .box-label .type { opacity: 0.65; font-weight: 400; }
+  .box-children { display: flex; flex-direction: column; gap: 10px; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .row > .box, .row > .col { flex: 1; min-width: 220px; }
+
+  .struct { border-color: var(--struct-border); }
+  .struct > .box-label { color: var(--struct-text); }
+
+  .built { border-color: var(--built-border); background: var(--built-bg); }
+  .built > .box-label { color: var(--built-text); }
+
+  .stub { border-color: var(--stub-border); background: var(--stub-bg); }
+  .stub > .box-label { color: var(--stub-text); }
+
+  .hiddensec {
+    border-color: var(--hidden-border);
+    background: var(--hidden-bg);
+    border-style: dashed;
+  }
+  .hiddensec > .box-label { color: var(--hidden-text); }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip {
+    font-size: 12px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: var(--page);
+    white-space: nowrap;
+  }
+  .chip .qtype { color: var(--text-muted); margin-right: 4px; }
+  .chip.action { border-color: var(--built-border); color: var(--built-text); font-weight: 500; }
+
+  .note {
+    font-size: 11.5px;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
+  .tag {
+    font-size: 10.5px;
+    font-weight: 500;
+    padding: 1px 8px;
+    border-radius: 8px;
+  }
+  .tag.stub { background: var(--stub-bg); color: var(--stub-text); border: 1px solid var(--stub-border); }
+  .tag.hidden { background: var(--hidden-bg); color: var(--hidden-text); border: 1px solid var(--hidden-border); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>Learning Tool — widget blocks</h1>
+<p class="subtitle">Same object hierarchy as before, drawn as containment instead of indentation</p>
+
+<div class="legend">
+  <span><span class="swatch" style="border-color:var(--struct-border);background:var(--struct-bg)"></span> structural (layout, window, stack)</span>
+  <span><span class="swatch" style="border-color:var(--built-border);background:var(--built-bg)"></span> fully built</span>
+  <span><span class="swatch" style="border-color:var(--stub-border);background:var(--stub-bg)"></span> placeholder / stub</span>
+  <span><span class="swatch" style="border-color:var(--hidden-border);background:var(--hidden-bg);border-style:dashed"></span> hidden until a prior step completes</span>
+</div>
+
+<!-- MainWindow -->
+<div class="box struct">
+  <div class="box-label"><span class="type">QMainWindow</span> MainWindow <span class="note">main.py</span></div>
+  <div class="box-children">
+
+    <!-- QTabWidget -->
+    <div class="box struct">
+      <div class="box-label"><span class="type">QTabWidget</span> central widget</div>
+      <div class="row">
+
+        <!-- Reflection tab -->
+        <div class="col" style="flex: 3; min-width: 320px;">
+          <div class="box built">
+            <div class="box-label"><span class="type">Tab</span> "Reflection"</div>
+            <div class="box-children">
+
+              <div class="box built">
+                <div class="box-label"><span class="type">QWidget</span> Tool2Widget <span class="note">tool2_reflection/ui.py</span></div>
+                <div class="box-children">
+
+                  <div class="box struct">
+                    <div class="box-label"><span class="type">QStackedWidget</span> self._stack</div>
+                    <div class="box-children">
+
+                      <!-- Menu page -->
+                      <div class="box built">
+                        <div class="box-label"><span class="type">[0]</span> Menu page</div>
+                        <div class="chips">
+                          <span class="chip"><span class="qtype">QLabel</span>"Tool 2 — Reflection"</span>
+                          <span class="chip action">Add Reflection → index 1</span>
+                          <span class="chip action">Delete Reflection → _on_open_delete</span>
+                          <span class="chip action">View Reflections → index 3</span>
+                        </div>
+                      </div>
+
+                      <!-- Add Reflection page -->
+                      <div class="box built">
+                        <div class="box-label"><span class="type">[1]</span> Add Reflection page</div>
+                        <div class="box-children">
+                          <div class="chips"><span class="chip action">Back to Menu</span></div>
+
+                          <div class="box built">
+                            <div class="box-label">Metadata section <span class="type">QFormLayout</span></div>
+                            <div class="chips">
+                              <span class="chip"><span class="qtype">QDateEdit</span>date_field</span>
+                              <span class="chip"><span class="qtype">QLineEdit</span>media_field *</span>
+                              <span class="chip"><span class="qtype">QLineEdit</span>author_field</span>
+                              <span class="chip"><span class="qtype">QLineEdit</span>topic_field</span>
+                              <span class="chip"><span class="qtype">QLineEdit</span>character_field</span>
+                              <span class="chip action">Submit Metadata</span>
+                            </div>
+                          </div>
+
+                          <div class="box hiddensec">
+                            <div class="box-label">Input section <span class="tag hidden">hidden until metadata submitted</span></div>
+                            <div class="chips">
+                              <span class="chip"><span class="qtype">QTextEdit</span>content_box</span>
+                              <span class="chip"><span class="qtype">QTextEdit</span>initial_reflection_box</span>
+                              <span class="chip action">Generate Questions → logic.generate_context_questions</span>
+                            </div>
+                          </div>
+
+                          <div class="box hiddensec">
+                            <div class="box-label">Question section <span class="tag hidden">hidden until questions shown</span></div>
+                            <div class="chips">
+                              <span class="chip"><span class="qtype">QTextEdit</span>question_box (hidden field)</span>
+                              <span class="chip">3× readonly display + response QTextEdit</span>
+                              <span class="chip action">Generate Final Question → logic.generate_final_question</span>
+                            </div>
+                          </div>
+
+                          <div class="box hiddensec">
+                            <div class="box-label">Reflection section <span class="tag hidden">hidden until final question ready</span></div>
+                            <div class="chips">
+                              <span class="chip"><span class="qtype">QTextEdit</span>additional_reflection_box</span>
+                              <span class="chip"><span class="qtype">QTextEdit</span>notes_box</span>
+                              <span class="chip action">Combine Reflections</span>
+                            </div>
+                          </div>
+
+                          <div class="box hiddensec">
+                            <div class="box-label">Combined section <span class="tag hidden">hidden until combined</span></div>
+                            <div class="chips">
+                              <span class="chip"><span class="qtype">QTextEdit readonly</span>combined_box</span>
+                            </div>
+                          </div>
+
+                          <div class="box hiddensec">
+                            <div class="box-label">Finish section <span class="tag hidden">hidden until combined</span></div>
+                            <div class="chips">
+                              <span class="chip action">Finish</span>
+                              <span class="chip action">Confirm &amp; Save → INSERT Reflections + Hash.hash_insertion <span class="tag hidden" style="margin-left:6px">hidden until Finish clicked</span></span>
+                            </div>
+                          </div>
+
+                        </div>
+                      </div>
+
+                      <!-- Delete Reflection page -->
+                      <div class="box built">
+                        <div class="box-label"><span class="type">[2]</span> Delete Reflection page</div>
+                        <div class="box-children">
+                          <div class="chips"><span class="chip action">Back to Menu</span></div>
+                          <div class="row">
+                            <div class="box built">
+                              <div class="box-label">left <span class="type">QVBoxLayout</span></div>
+                              <div class="chips">
+                                <span class="chip"><span class="qtype">QLabel</span>"Character"</span>
+                                <span class="chip"><span class="qtype">QComboBox</span>delete_character_combo</span>
+                                <span class="chip"><span class="qtype">QLabel</span>"Reflection ID to delete"</span>
+                                <span class="chip"><span class="qtype">QLineEdit</span>delete_id_field</span>
+                                <span class="chip action">Delete</span>
+                              </div>
+                            </div>
+                            <div class="box built">
+                              <div class="box-label">right <span class="type">QVBoxLayout</span></div>
+                              <div class="chips">
+                                <span class="chip"><span class="qtype">QLabel</span>"Reflections"</span>
+                                <span class="chip"><span class="qtype">QListWidget</span>delete_list</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- View Reflections page -->
+                      <div class="box stub">
+                        <div class="box-label"><span class="type">[3]</span> View Reflections page <span class="tag stub">stub</span></div>
+                        <div class="chips">
+                          <span class="chip action">Back to Menu</span>
+                          <span class="chip"><span class="qtype">QLabel</span>"View Reflections — coming soon"</span>
+                        </div>
+                      </div>
+
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- Other 3 tabs, stacked narrow -->
+        <div class="col" style="flex: 1; min-width: 220px; display:flex; flex-direction:column; gap:12px;">
+          <div class="box stub">
+            <div class="box-label">Tab "Consumption" <span class="tag stub">stub</span></div>
+            <div class="chips"><span class="chip"><span class="qtype">QLabel</span>"Tool 1 — Consumption Reflection Layer"</span></div>
+            <div class="note">logic.py exists, ui.py isn't wired in</div>
+          </div>
+          <div class="box stub">
+            <div class="box-label">Tab "Narratives" <span class="tag stub">stub</span></div>
+            <div class="chips"><span class="chip"><span class="qtype">QLabel</span>"Tool 3 — Narrative &amp; Character Store"</span></div>
+            <div class="note">no ui.py yet</div>
+          </div>
+          <div class="box stub">
+            <div class="box-label">Tab "Notes" <span class="tag stub">stub</span></div>
+            <div class="chips"><span class="chip"><span class="qtype">QLabel</span>"Tool 4 — Notes Organisation"</span></div>
+            <div class="note">no ui.py yet</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</div>
+</body>
+</html>

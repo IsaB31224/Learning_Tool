@@ -3,6 +3,113 @@
 
 ---
 
+## Session 14 — August 2026
+
+### What was done
+- `tool1_contents/logic.py` tree construction confirmed working end to end: `add_nodes_dictionary` builds a `TreeNode` per domain and theme from the static `domain_theme_map`, links themes as children via `TreeNode.add_child`; `Root_node` ("Domains") then gets each domain node attached as a child via `parent_nodes_dict.values()`
+- `dfs_traversal` (`tool1_contents/logic.py`) built and debugged by John across several iterations, reviewed (not written) by Claude at each step per the hardcode/vibe-code split
+- Six issues found and fixed by John, in order:
+  1. First version (`dfs_search`) only appended leaf nodes — domain nodes and the root were silently dropped from the result, losing all hierarchy
+  2. `nodes_list` was module-level, so results accumulated across separate calls instead of resetting each time
+  3. Recursive call return values were invoked but discarded (`dfs_traversal(node)` called with no assignment) — traversal only ever went one level deep
+  4. Fixed by capturing the recursive call into a variable and merging it into the caller's list with `.extend()` — required understanding why `.append()` would nest the whole returned list as a single item instead of folding its contents in one at a time
+  5. That fix reintroduced a duplication bug: leaf nodes got added once by the parent's pre-recursion `append(node)` and again by their own call's leaf-branch `append(root)`
+  6. Fixed by removing the pre-recursion append — which then dropped every non-leaf node from the result again, since only the leaf branch was appending anything; final fix added `nodes_list.append(root)` specifically inside the non-leaf (`else`) branch, so every node is appended in exactly one place
+
+### Concepts learned
+- `.append(x)` adds one item, even if `x` is itself a list (produces nesting); `.extend(iterable)` folds each element of an iterable in individually — the correct choice for merging a recursive call's returned list into the caller's own list
+- Recursive return values are not automatically propagated — each call's local result has to be explicitly captured and recombined into the caller's, unlike a shared/module-level list which mutates in place across calls
+- Pre-order DFS structure: a node must be appended in exactly one place (either its own leaf-branch check or its own non-leaf branch) — appending it from a parent's loop *and* from within its own call is what causes duplication
+
+### State of the code
+- `shared/tree.py` — `TreeNode` unchanged, working correctly (`add_child`, `is_leaf`, `is_root`)
+- `tool1_contents/logic.py` — tree construction (`add_nodes_dictionary`, `Root_node`) and `dfs_traversal` both complete and correct; verified by full manual trace returning all 12 nodes (1 root + 3 domains + 8 themes) exactly once, in pre-order
+- `tool1_contents/ui.py` — still an unbuilt one-line stub, no display wired to the traversal yet
+
+### Next session
+- Decide what `dfs_traversal`'s output actually feeds into next — a `QTreeWidget`-based view tab, a theme search feature, or both
+- `tool1_contents/ui.py` wiring is fair game for Claude to build (PyQt6 boilerplate) once John is ready to start on the frontend for Tool 1
+
+---
+
+## Session 13 — July 2026
+
+### What was done
+- Early skeleton for Tool 1's data structure laid down: `shared/tree.py` (`TreeNode` — `theme`, `child` list, `parent`, `add_child`, `is_leaf`, `is_root`) and `tool1_contents/logic.py` (domain/theme string lists, `list_node_create`, `add_theme_to_domain`) — both hand-written by John per the hardcode/vibe-code split for data structures
+- Socratic session (Claude as tutor, no code written by Claude) on a bug in `add_theme_to_domain` (`tool1_contents/logic.py` line 44): original line read `TreeNode.domain.add_child(theme)`, which looks up a class-level attribute literally named `domain` on `TreeNode` (which doesn't exist) rather than using the `domain` parameter already in scope
+- Root confusion identified and resolved: conflating dot-attribute access (`X.y` — "look up attribute `y` stored inside object `X`") with referencing a local variable by name (`y` used plainly). Also touched why `self` has no meaning in a bare module-level function — it only exists inside a method's own parameter list
+- Fix applied by John: `domain.add_child(theme)` — uses the parameter directly, since passing an object into a function binds the parameter name straight to that object, no lookup needed
+
+### Concepts learned
+- Dot access vs local name lookup — `X.y` never searches local variables for `y`; it asks the object `X` for an attribute stored under that literal name
+- Passing an object as an argument binds the parameter name directly to that object (reference, not a search key) — the parameter name *is* how you refer to it going forward
+- `self` is only meaningful inside a method's own parameter list; it doesn't exist in a standalone module-level function
+
+### Issues surfaced, not yet fixed
+- `list_node_create` (`tool1_contents/logic.py`) builds a `TreeNode` for each item but never stores or returns it (`Node_created` is discarded each loop) — currently no way to obtain actual `TreeNode` instances for any domain or theme
+- `add_theme_to_domain`'s `theme` argument needs to be a `TreeNode` instance (`add_child` does `child.parent = self`), but `Finance_theme_list` / `Mental_theme_list` / `Social_theme_list` currently hold plain strings — type mismatch once this is actually wired up
+- `TreeNode.is_leaf` checks `self.child == None`, but `child` defaults to `[]`, not `None` — this condition can never be true as written
+- `TreeNode.is_leaf` / `is_root` return a string message on the "true" branch and fall through to implicit `None` otherwise — neither returns an actual boolean, so they can't be used as conditions yet
+
+### State of the code
+- `shared/tree.py` — `TreeNode` class skeleton in place; `is_leaf`/`is_root` logic still incorrect
+- `tool1_contents/logic.py` — `add_theme_to_domain` object-reference bug fixed; `list_node_create` still doesn't retain created nodes; domain/theme lists still plain strings, not yet connected to `TreeNode`
+
+### Next session
+- Fix `list_node_create` to store/return the `TreeNode`s it creates
+- Decide how domain nodes and theme nodes actually get linked into one tree (root + children) from the current flat string lists
+- Revisit `is_leaf` / `is_root` so they return real booleans off correct conditions
+
+---
+
+## Session 12 — July 2026
+
+### What was done
+- Built a 30-second reflection pause: once the final Socratic question is generated, the user is meant to be blocked from typing for 30 seconds while a live countdown label shows, before the box unlocks
+- Split by ownership per the hardcode/vibe-code convention: `shared/Reflection_timer.py` (plain-state `Reflection_Timer` class — `duration`/`start_time` via `time.monotonic()`, `seconds_remaining()`, `is_timer_finished()`, zero PyQt6 dependency) was designed and hand-written by John; the frontend wiring in `tool2_reflection/ui.py` (`QTimer` on a 1s tick, `pause_label`, locking `additional_reflection_box`) was delegated to and implemented by Claude
+- Fixed an unrelated pre-existing crash blocking any testing: `hashmap_initialise()` in `shared/hashmap.py` was calling `hash_insertion` on a `NULL` `Character_referenced` already present in `learning_tool.db`, crashing `hash_formula` on startup (`len(None)`) — this is the same issue already flagged in `CLAUDE.md`'s known rough edges. Scoped fix: skip `None` characters during hashmap init only; the broader NULL-character issue elsewhere (Delete/View dropdowns) is still open
+- Verified the countdown label and live tick work correctly in the running app
+- Verified via headless probe scripts (direct method calls + simulated `QTest` keystrokes) that `additional_reflection_box.setReadOnly(True)` and blocked keystrokes both work correctly *in isolation*
+- Live manual test in the actual running app contradicted the isolated probes: label and counter display and count down correctly, but the box does **not** actually block typing — read-only lock is not functioning end to end
+
+### Issues yet to be fixed
+- **Reflection pause box does not actually lock for typing.** Countdown label and timer logic are confirmed correct standalone; the `setReadOnly(True)` call in `_start_reflection_pause()` (`tool2_reflection/ui.py`) is not taking effect against real user input in the live app despite isolated `QTest` keystroke simulation blocking correctly. Root cause not yet found — deferred to a later session.
+
+### State of the code
+- `shared/Reflection_timer.py` — complete, hand-built, matches acceptance criteria
+- Frontend wiring — countdown label functional; read-only lock not functional, known bug
+- `shared/hashmap.py` — startup crash on `NULL` character fixed (narrow scope only)
+
+### Next session
+- Debug why `additional_reflection_box.setReadOnly(True)` doesn't block typing in the live app despite working in isolated tests
+
+---
+
+## Session 11 — July 2026
+
+### What was done
+- Reorganized the whole `Learning_Tool` directory to clean up clutter that had built up across sessions (structure only — no behavioural changes)
+- Consolidated every loose, extension-less design/notes file into a new top-level `docs/` folder: `db/schema_design` → `docs/schema_design.sql`, `tool2_reflection/tool2_flow` → `docs/tool2_flow.md`, `tool2_reflection/Message_Focus/reflection_examples` and `.../reflection_output_feedback` → `docs/reflection_examples.md` / `docs/reflection_output_feedback.md`, `shared/Data_Structures.txt` → `docs/Data_Structures.txt`; the now-empty `Message_Focus/` folder was removed
+- While moving it, fixed `docs/schema_design.sql`'s stale `Source_Name` column to `Source_Author` so the doc matches the real `Reflections` table in `db/database.py`
+- Deleted `shared/api.py` (one-line stub, never imported) and `shared/execution.py` (never imported, and broken as written — imported a module-level `hash_formula` that doesn't exist since it's a method on `HashMap`)
+- Renamed the root `medium.py` (just `Hash = HashMap()`) to `shared/hash_instance.py` — kept it a separate file from `hashmap.py` to preserve its actual job: a neutral third module so `main.py` and `tool2_reflection/ui.py` can both import the `Hash` singleton without a circular import between them. Updated both import lines accordingly
+- Moved the stray root-level `test_api.py` into a new `scripts/` package (`scripts/__init__.py` added), fixed the `initial_reflectioon` typo, and updated it to call the current `generate_context_questions` (it had been calling `call_prompt`, a function that no longer exists in `tool2_reflection/logic.py` since the two-call pipeline replaced the old single-call architecture) — it's now an actually-runnable manual smoke test via `python -m scripts.test_api`
+- Removed stray `__pycache__/` directories throughout (gitignored build artifacts)
+- Verified with `python -m py_compile` on all touched files, then ran the full app — confirmed it opens cleanly and Tool 2's menu/Add/Delete/View flow all still work exactly as before
+
+### Design decisions
+- `learning_tool.db` and `.env` left at the project root untouched — `DB_PATH` and `load_dotenv()` both resolve relative to the root, and moving either would need a code change for no organizational benefit
+- Stub folders `tool1_consumption/`, `tool3_narratives/`, `tool4_notes/` left as-is — already clean, not part of the mess being cleaned up
+
+### State of the code
+- Directory structure reorganized and fully verified — no functional changes to any tool
+- `scripts/test_api.py` is now a working manual smoke test again (was silently broken since the single-call → two-call pipeline migration)
+
+### Next session
+- Begin real implementation of View Reflections (currently a stub) — wire to `Hash.read_character`
+
+---
+
 ## Session 10 — July 2026
 
 ### What was done
