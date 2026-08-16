@@ -3,6 +3,42 @@
 
 ---
 
+## Session 15 — August 2026
+
+### What was done
+- `tool1_contents/ui.py` built from scratch and wired into `main.py`'s Contents tab (previously a one-line stub / placeholder `QLabel`)
+- Tree rendered as a `QGraphicsScene`/`QGraphicsView` diagram: every node is its own blue box (`#2563eb` fill, `#3b82f6` border), positioned via a recursive layout (`_assign_positions`), with a line drawn from each parent's bottom-center to every child's top-center
+- Boxes made clickable: `ItemIsSelectable` flag + stored `TreeNode` reference on each box, driven by `QGraphicsScene.selectionChanged`
+- Detail overlay built as a second `QStackedWidget` page (mirrors the menu/Add/Delete/View navigation pattern already used in `tool2_reflection/ui.py`): header label, the clicked/searched node's name in a styled blue box, an empty `QTextEdit`, and an X button that clears the scene selection and swaps back to the graph
+- `node_search(n_list, index_node)` written by John in `tool1_contents/logic.py`, reviewed (not written) by Claude per the hardcode/vibe-code split — searches the flat `dfs_traversal` output by `node.theme` string, returns `node.text` on match
+- Socratic review round on John's first draft of `node_search` surfaced three issues, all fixed by John:
+  1. Original compared `node == index_node` (whole objects, `TreeNode` has no `__eq__`) instead of `node.theme == index_node` (string to string)
+  2. Original returned `index_node.text` instead of `node.text` — bypassed the node actually found by the loop
+  3. `TreeNode` (`shared/tree.py`) had no `text` attribute yet — added `self.text = ""` in `__init__`
+- Typed search bar added above the graph (`QLineEdit` + Search button, Enter key also triggers it) — reuses `node_search` and the same detail overlay; a match opens the overlay, `None` (no match) shows red inline status text and stays on the graph
+- Verified live in the running app: graph renders correctly, clicking a box opens the overlay with the correct name, X returns cleanly to the graph, re-clicking the same node re-opens it (confirmed `clearSelection()` on close was necessary for this)
+- Typed search box confirmed working end to end by John via manual test in the running app, after an earlier automated verification attempt was abandoned mid-session (see below)
+
+### Design decisions
+- Overlay implemented as a second `QStackedWidget` page covering the graph, rather than a true floating/transparent widget on top of the `QGraphicsView` — matches the existing Tool 2 navigation pattern and avoids manual z-ordering/resize handling
+- `node_search`'s return contract (`None` = not found vs `""` = found with no content yet) is relied on directly by both the click handler and the typed search handler, rather than duplicating a separate existence check
+- Graph box labels (`QGraphicsTextItem`) set `setAcceptedMouseButtons(NoButton)` so a click on the text itself still falls through to the underlying box for selection
+
+### Issues encountered
+- Live GUI verification of the typed search box was first attempted via simulated PowerShell mouse clicks, but `SetForegroundWindow` silently failed to bring the app window forward and a click landed on an unrelated browser window instead. No harmful action resulted, but automated verification was abandoned in favor of John testing manually — confirmed working, per above
+- `TreeNode.text` is still always `""` for every node — no content-authoring UI or JSON-backed storage exists yet, so the detail overlay currently always shows empty content regardless of which theme is selected or searched
+
+### State of the code
+- `tool1_contents/ui.py` — complete for this pass: graph view, click-to-detail overlay, and typed search all built, wired into `main.py`, and confirmed working end to end
+- `tool1_contents/logic.py` — `node_search` complete and correct, hand-written by John
+- `shared/tree.py` — `TreeNode` now has a `text` attribute (defaults to `""`)
+- `main.py` — Contents tab now loads `Tool1Widget()` instead of the placeholder
+
+### Next session
+- Decide how theme content actually gets authored/stored so `TreeNode.text` can hold something real (the JSON-backed Seerah content plan already sketched in `tool1_contents/logic.py`'s docstring)
+
+---
+
 ## Session 14 — August 2026
 
 ### What was done

@@ -5,7 +5,7 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtGui import QBrush, QPen, QColor, QFont, QPainter
 from PyQt6.QtCore import Qt
-from tool1_contents.logic import Root_node, dfs_traversal, node_search
+from tools.tool1_contents.logic import Root_node, dfs_traversal, node_search
 
 NODE_WIDTH = 140
 NODE_HEIGHT = 40

@@ -122,16 +122,17 @@ This schema will extend to Tool 3 and Tool 4 later. Design it with that in mind.
 Tool 2 lives or dies on the quality of questions returned by the Anthropic API. The system prompt needs to be written and tested in isolation before any UI is built around it. A working API call with a prompt that reliably produces contextual, non-generic reflection questions is the proof of concept. Build and test this before touching PyQt6.
 
 **3. Repo structure**
-One repo, four modules — one per tool. Decide the folder structure before writing any code. A clean structure now prevents refactoring later. Suggested:
+One repo, four modules — one per tool. Decide the folder structure before writing any code. A clean structure now prevents refactoring later. Actual structure as it stands (superseding the original suggestion below — `tool1_consumption` was renamed `tool1_contents`, `tool4_notes` renamed `tool4_actions`, and the tools were later consolidated under `/tools`):
 ```
-/app
-  /tool1_consumption
+/tools
+  /tool1_contents
   /tool2_reflection
   /tool3_narratives
-  /tool4_notes
-  /db
-  /shared
+  /tool4_actions
+/db
+/shared
+  /DSA
 main.py
 ```
 
-The `/db` folder holds the SQLite schema and database logic shared across tools. The `/shared` folder holds anything used by more than one tool — API wrappers, common UI components.
+The `/db` folder holds the SQLite schema and database logic shared across tools. The `/shared` folder holds anything used by more than one tool — API wrappers, common UI components — with hand-rolled data structures (`HashMap`, `TreeNode`) isolated under `/shared/DSA`.

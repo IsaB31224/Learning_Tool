@@ -1,5 +1,5 @@
 
-from shared.hashmap import HashMap
+from shared.DSA.hashmap import HashMap
 
 
 Hash= HashMap()

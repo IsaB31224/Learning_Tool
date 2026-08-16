@@ -1,4 +1,4 @@
-from tool2_reflection.logic import generate_context_questions
+from tools.tool2_reflection.logic import generate_context_questions
 
 questions = generate_context_questions(
     source_content="The variance in peoples personalities is noticeable by analysing the way they react to the various stories or incidents that are related to them. One can carry out this experiment himself: Try relating a sad story to a group of people and see how differently people react.",

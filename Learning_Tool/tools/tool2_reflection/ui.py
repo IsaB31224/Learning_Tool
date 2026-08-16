@@ -5,7 +5,7 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import QDate, QObject, QThread, pyqtSignal, QTimer
 
-from tool2_reflection.logic import generate_context_questions, generate_final_question
+from tools.tool2_reflection.logic import generate_context_questions, generate_final_question
 from db.database import get_connection, get_all_character
 from shared.hash_instance import Hash
 from shared.Reflection_timer import Reflection_Timer

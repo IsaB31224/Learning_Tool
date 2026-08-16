@@ -3,8 +3,8 @@ from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QTabWidget, QWidget, QLabel, QVBoxLayout
 )
 from db.database import init_db
-from tool2_reflection.ui import Tool2Widget
-from tool1_contents.ui import Tool1Widget
+from tools.tool2_reflection.ui import Tool2Widget
+from tools.tool1_contents.ui import Tool1Widget
 from shared.hash_instance import Hash
 
 

@@ -20,7 +20,7 @@ Tool 1 Window Split in to 2 windows. View Domains and Search themes
 
     I need to think through the points of comparison between the user and exmplar and how i am structuring this in the tool 1 system
 """
-from shared.tree import TreeNode
+from shared.DSA.tree import TreeNode
 
 
 domain_list=["Finance","Social","Mental"]

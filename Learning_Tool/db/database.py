@@ -1,7 +1,7 @@
 import sqlite3 #transforms schema to database
 import os
 
-DB_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "learning_tool.db")
+DB_PATH = os.path.join(os.path.dirname(__file__), "learning_tool.db")
 
 def initialise_db():
     with get_connection() as conn:
@@ -33,6 +33,18 @@ def get_character_name(character_name):
         ).fetchall()
         return rows
 
+def get_exact_reflection(character_name,reflection_id):
+
+    with get_connection() as conn:
+        rows=conn.execute(
+
+            " SELECT * FROM Reflections WHERE Character_referenced = ? AND Reflection_id=?",(character_name,reflection_id)
+
+        ).fetchall()
+        return rows[0] if rows else None
+
+
+    
 
 def delete_reflection(character_name,reflection_id):
     with get_connection() as conn:

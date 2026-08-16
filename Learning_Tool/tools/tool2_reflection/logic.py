@@ -2,7 +2,10 @@ import os
 import anthropic
 from dotenv import load_dotenv
 
-load_dotenv()
+_ENV_PATH = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "git", ".env"
+)
+load_dotenv(_ENV_PATH)
 
 _API_KEY = os.environ["ANTHROPIC_API_KEY"]
 
