@@ -11,6 +11,15 @@ This is a personal-use, self-learning project (not a commercial product). Per `P
 
 The hand-rolled `HashMap` in `shared/DSA/hashmap.py` is intentional — it exists so the user practises implementing hashing/collision handling themselves, not because Python's `dict` is insufficient. Don't replace it with a plain `dict` unless asked.
 
+### How we review bugs in hardcode-owned code
+
+When asked to review (not fix) code on the "hardcode manually" list, don't hand back a flat list of every defect found — the point is for the user to find and fix them themselves.
+
+- Pose open-ended questions that point at a location and a behavior to trace, not the defect itself — e.g. "count what's passed at this call site against the function's definition" rather than "this call is missing an argument."
+- Look for root-cause clustering before writing the list: several apparent bugs are often downstream symptoms of one line or one design decision — collapse those into a single question aimed at the root rather than listing each symptom separately. Only keep bugs as separate questions when they're genuinely independent (fixing one won't surface or remove another).
+- Separate crash-bugs (break execution) from open design questions (only matter once the code runs — missing-input handling, unused return values, etc.) — don't blend the two into one list.
+- This applies to review only. Reviewing doesn't imply permission to edit — fixing hardcode-owned code is a distinct request the user makes explicitly.
+
 `session_log.md` (in `Learning_Tool/`) is a running dev diary, most-recent-session-first. Check it for the latest intent before assuming the codebase matches the last commit — the log is sometimes ahead or behind the actual code state.
 
 ## Commands

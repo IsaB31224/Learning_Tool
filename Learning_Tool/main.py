@@ -5,6 +5,7 @@ from PyQt6.QtWidgets import (
 from db.database import init_db
 from tools.tool2_reflection.ui import Tool2Widget
 from tools.tool1_contents.ui import Tool1Widget
+from tools.tool4_actions.ui import Tool4Widget
 from shared.hash_instance import Hash
 
 
@@ -25,7 +26,7 @@ class MainWindow(QMainWindow):
         tabs.addTab(Tool2Widget(), "Reflection")
         tabs.addTab(Tool1Widget(), "Contents")
         tabs.addTab(placeholder("Tool 3 — Narrative & Character Store"), "Narratives")
-        tabs.addTab(placeholder("Tool 4 — Notes Organisation"), "Notes")
+        tabs.addTab(Tool4Widget(), "Notes")
 
         self.setCentralWidget(tabs)
 

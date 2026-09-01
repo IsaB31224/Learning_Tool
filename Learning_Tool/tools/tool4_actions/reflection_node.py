@@ -15,3 +15,6 @@ class reflection_node:
         self.topic_of_discussion= data[6]
         self.abstract_topic= data[7]
         self.character_referenced= data[8]
+
+    def __repr__(self):
+        return f"reflection_node({self.id})"
