@@ -3,6 +3,54 @@
 
 ---
 
+## Session 16 — September 2026
+
+### What was done
+- Whole session was `tools/tool4_actions/graph.py` cleanup — no new features, got `reflection_workflow` running cleanly end to end for the first time
+- **Node classes renamed to PascalCase** — `action_node`/`belief_node`/`reflection_node` → `ActionNode`/`BeliefNode`/`ReflectionNode` (class defs, `__repr__`, `graph.py` imports + `node_creation`). On-disk `Edge.py`/`Action_node.py` had drifted to capitalised while git still tracked them lowercase — renamed the files back to `edge.py`/`action_node.py` so disk, git, and imports agree (was a real cross-platform import crash waiting to happen)
+- **Crash bugs fixed:** removed dead `from platform import node`; removed wrong-prefix `from Learning_Tool.tools...` import (would `ModuleNotFoundError` — package root is `tools`, not `Learning_Tool`); resolved the filename-casing mismatch above. `graph.py` now imports cleanly (verified: `python -c "import tools.tool4_actions.graph"`)
+- **`ReflectionNode` no longer self-fetches** — `__init__(self, reflection_id, data)` now just unpacks the 9-field row it's handed; dropped the `get_exact_reflection` import and DB call
+- **`node_extraction` rewritten** — `reflections` is a list of raw 9-field DB tuples, so it matches on `reflection[0]` (the id) and returns the whole row (was `.id` / `.Reflection_Writing` attribute access, which never worked on a tuple)
+- **None case handled** — if `node_extraction` finds no matching id, `reflection_workflow` returns `None` immediately and builds nothing; on success returns the root `ReflectionNode`
+- **`adj_dict` shape settled** — key is the source **node object itself**, value is `list[Edge]` of that node's outgoing edges (works because the node classes hash by identity — no `__eq__`/`__hash__`)
+- **`node_dict` fixed to be the node registry** — plain `{}`, `{(type(node).__name__, node.id): node}`, one entry per node; key shape now matches what `Edge` stores in `from_node_id`/`to_node_id`
+- **`node_dict_create` deleted** — dead since the hardcoded `adj_list` was removed, built the wrong structure, shadowed the `edge` module
+- Smoke-tested `reflection_workflow` against fake hashmap rows — both found and not-found paths behave correctly
+- Updated `tools/tool4_actions/current_work.md` with all of the above
+- Added a **`### How I'm working on my habits`** section to `CLAUDE.md` — four rules Claude enforces even in vibe-code files (contract-first / one shape per concept / slice before layer / name the pattern), with an end-of-session check and a rotating "current focus" (set to contract-first)
+
+### Design decisions
+- `adj_dict` keyed by the live node object rather than a `(type, id)` tuple — simpler while one workflow run owns its own objects; noted to revisit if nodes ever get reloaded and need to match by value
+- `node_dict` and `adj_dict` stay two separate structures, don't merge — registry (identity → node) vs adjacency (node → outgoing edges)
+- `ReflectionNode` is *handed* its row, doesn't fetch — resolves the "is it fetching something by hand that's no longer needed" question from `current_work.md`
+- Tool 4's next move confirmed (not built this session): wire the "Begin Reflection Workflow Sequence" button → `reflection_workflow` → the two in-memory dicts back the graph page. That closes Tool 4's first end-to-end vertical slice. Restart persistence and real graph rendering are deliberately the *next* slices, not this one
+
+### Development patterns surfaced (meta discussion, no code)
+- Reviewed the recurring mistakes across the session and named four: (1) implicit contracts between components — call sites guess arg order/count/return type and guess wrong; (2) one concept spelled several ways — node identity existed as the object, `("Reflection", 7)`, `("ReflectionNode", 7)`, and bare `7` in one file; (3) building a layer before any consumer exists → repeated rework; (4) scratch code left in real modules
+- Through-line: make the implicit explicit, on paper, before writing code. This is why the foundation feels shaky and things get re-fixed — the design only lives in John's head, which changes between sessions
+- A memory was saved (`development-patterns`) so Claude keeps naming these by pattern, not just fixing the instance
+
+### State of the code
+- `graph.py` — `node_creation`, `node_extraction`, `edge_creation`, `reflection_workflow` all run cleanly; smoke-tested with fake rows only, never from the app
+- Tool 4 overall: ~35–40%. Pieces (UI shell, node classes, `Edge`, graph logic) each built and individually working, but **no end-to-end path** — the UI doesn't call `graph.py`, there's no persistence (`node_dict`/`adj_dict` are in-memory module globals), and the graph page is still a "No data yet" placeholder with no renderer
+- `CLAUDE.md` — new habits section added
+- `current_work.md` — updated
+
+### Issues / open
+- `belief` and `action` (2 of `reflection_workflow`'s 4 params) have no source in the UI — decision pending: same page as character+id, or a separate step
+- No restart persistence for the graph — needs a nodes/edges schema and load-on-startup (a later slice)
+- Graph page has no rendering — Tool 1's `QGraphicsScene` box-and-line pattern is the reuse candidate
+- `edge_creation` single-entry-point question (should it also register nodes?) still open
+- `Project_files/06_actions_tool.md` still stale against the code
+- `CLAUDE.md` says `session_log.md` lives in `Learning_Tool/` — it's actually at `Project_files/Project_Journey/session_log.md`
+
+### Next session
+- Wire the "Begin Reflection Workflow Sequence" button → `reflection_workflow` (character rows via `Hash.read_character`, `int()` the reflection_id from the line edit, guard non-numeric input, handle the `None` return)
+- Decide `belief`/`action` input placement (likely two fields on the existing workflow-entry page)
+- Make `_graph_has_data()` a real check; render the graph page from `node_dict`/`adj_dict`, reusing Tool 1's scene layout
+
+---
+
 ## Session 15 — August 2026
 
 ### What was done

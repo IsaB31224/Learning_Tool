@@ -1,5 +1,5 @@
 
-class action_node:
+class ActionNode:
 
     def __init__(self,id,action):
 
@@ -13,4 +13,12 @@ class action_node:
         return self.action
 
     def __repr__(self):
-        return f"action_node({self.id})"
+        return f"ActionNode({self.id})"
+
+    def __eq__(self, other):
+        if not isinstance(other, type(self)):
+            return NotImplemented
+        return self.id == other.id
+
+    def __hash__(self):
+        return hash((type(self).__name__, self.id))

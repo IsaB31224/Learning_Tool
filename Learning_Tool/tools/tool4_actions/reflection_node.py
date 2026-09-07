@@ -1,10 +1,6 @@
-from db.database import get_exact_reflection
+class ReflectionNode:
 
-class reflection_node:
-
-    def __init__(self,reflection_id,character_name):
-
-        data=get_exact_reflection(character_name,reflection_id)
+    def __init__(self,reflection_id,data):
 
         self.id= data[0]
         self.given_prompt= data[1]
@@ -17,4 +13,12 @@ class reflection_node:
         self.character_referenced= data[8]
 
     def __repr__(self):
-        return f"reflection_node({self.id})"
+        return f"ReflectionNode({self.id})"
+
+    def __eq__(self, other):
+        if not isinstance(other, type(self)):
+            return NotImplemented
+        return self.id == other.id
+
+    def __hash__(self):
+        return hash((type(self).__name__, self.id))

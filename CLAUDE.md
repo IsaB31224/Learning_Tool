@@ -20,6 +20,19 @@ When asked to review (not fix) code on the "hardcode manually" list, don't hand 
 - Separate crash-bugs (break execution) from open design questions (only matter once the code runs — missing-input handling, unused return values, etc.) — don't blend the two into one list.
 - This applies to review only. Reviewing doesn't imply permission to edit — fixing hardcode-owned code is a distinct request the user makes explicitly.
 
+### How I'm working on my habits
+
+These override the "vibe-code freely" latitude. Apply them even in UI/boilerplate files.
+
+1. **Contract first.** Before writing any new function or method, state its contract as a comment — what it takes (type AND meaning), what it returns — and wait for me to confirm before writing the body.
+2. **One shape per concept.** If a value (a node identity, a DB row, an ID) is about to exist in a second representation, stop and flag it. Point me at the canonical form already in use.
+3. **Slice before layer.** If I ask you to build a function nothing calls yet, ask which caller will use it and what it needs from this function first.
+4. **Name the pattern.** When you spot one of my recurring weak spots (implicit contracts, inconsistent data shapes, building ahead of consumers, scratch code left in real files), name it explicitly before fixing it.
+
+**End-of-session check:** if we wrote code, list which of these came up and where.
+
+**Current focus (rotate when automatic):** contract-first.
+
 `session_log.md` (in `Learning_Tool/`) is a running dev diary, most-recent-session-first. Check it for the latest intent before assuming the codebase matches the last commit — the log is sometimes ahead or behind the actual code state.
 
 ## Commands

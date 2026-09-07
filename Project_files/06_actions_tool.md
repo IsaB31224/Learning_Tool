@@ -50,6 +50,47 @@ Rough node/edge sketch (not final):
 
 ---
 
+## Persistence design (resolved — 2026-09-02)
+
+**Status note:** the sections above this one (dated 2026-08-25) predate the working `Edge` class,
+the `__eq__`/`__hash__` additions on the node classes, and this persistence design — see
+`tools/tool4_actions/current_work.md` for an accurate trace of what's actually built today. This
+section is current as of the date above; the sections above it are not.
+
+Three components, following the same pattern already proven for Tool 2 (`Reflections` table ↔
+`HashMap`):
+
+- **`ui.py`** — collects the four raw inputs (character, reflection_id, belief, action) from the user.
+- **`graph.py`** — the *volatile* representation: `node_dict` / `adj_dict`, live only for the
+  duration of the program, built by `reflection_workflow`.
+- **SQLite** — the *non-volatile* representation: every sequence ever built, survives the program
+  closing. It is the source of truth; the graph is a cache of it, never the other way around.
+
+**Boot flow:** read every saved sequence row from SQLite → for each row, call `reflection_workflow`
+with that row's `(reflection_id, reflections, belief, action)` → `node_dict`/`adj_dict` populated.
+Mirrors `hashmap_initialise()` looping `hash_insertion()` per character. **Ordering dependency:**
+this must run *after* `hashmap_initialise()` — `reflection_workflow` resolves `reflections` via
+`Hash.read_character(character_name)`, so running the graph rebuild first would try to read a
+hashmap that isn't populated yet.
+
+**Save flow:** on Submit, write the new sequence to SQLite **first** — the moment the data becomes
+durable — **then** call `reflection_workflow` so the in-memory graph matches what's now on disk.
+Mirrors Tool 2's save handler exactly: `INSERT INTO Reflections` runs before `Hash.hash_insertion`.
+If this order were reversed (or the disk write skipped), a crash right after Submit would silently
+lose the sequence despite the user having submitted it.
+
+**Not yet decided (next step):**
+- Exact table schema for stored sequences — candidate: one row per sequence
+  (`reflection_id`, `belief_text`, `action_text`) vs. a fully generic node/edge table pair; see the
+  persistence-paths discussion in `current_work.md`.
+- A "read every saved sequence" function, playing the role `get_all_character()` plays for the
+  hashmap — doesn't exist yet in `db/database.py`.
+- Where the write step lives — following the Tool 2 precedent, likely `_submit_workflow` in
+  `ui.py` does the `INSERT` directly (mirroring `tool2_reflection/ui.py`'s save handler) rather
+  than routing it through `graph.py`.
+
+---
+
 ## Why this is worth the extra difficulty
 
 Per the hardcode/vibe-code split (`03_product_architecture.md`), this is squarely hardcode territory — same category as `shared/DSA/hashmap.py` and `shared/DSA/tree.py`. Two structures not yet fully built anywhere in this project:
@@ -75,11 +116,15 @@ Resolved — see "Node and edge design" above:
 - ~~What does "neglected longest" actually rank on?~~ Partially resolved — frequency is in-degree on Belief nodes. The "days since last action" half of this question is still open (see below).
 - ~~How does a node get referenced without holding a direct object reference?~~ Resolved — explicit `id` field per node, `Edge` references `id`s, not objects.
 
+Resolved — see "Persistence design" above:
+- ~~Does this need its own SQLite tables, or can it reuse/extend the existing `Reflections` table
+  structure?~~ Its own table — a sequence's new data (belief, action) isn't a reflection, it
+  references one. Exact columns still open (see "Not yet decided" above).
+
 Still open:
 - What triggers an action being marked "done" — a fixed checkbox, a follow-up reflection, something else?
 - "Neglected longest" by *time* (days since last action) — not yet decided how this combines with, or trades off against, the resolved frequency (in-degree) metric.
 - Where does this live in `main.py` — a fifth tab, or does the tab count/naming need rethinking?
-- Does this need its own SQLite tables, or can it reuse/extend the existing `Reflections` table structure?
 
 ---
 

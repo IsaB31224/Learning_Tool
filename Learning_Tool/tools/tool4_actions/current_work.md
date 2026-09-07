@@ -1,41 +1,175 @@
 # Current Work — Trace of Thought
 
-**Last touched:** 2026-09-01
+**Last touched:** 2026-09-02
 
-**Where I left off:** Session split in two halves. First half built out the Tool 4 UI end-to-end for menu → pick-a-reflection → begin-workflow entry. Second half reviewed `reflection_workflow` in `graph.py` and found it still broken — not fixed, left as questions to trace through next. The UI's "Begin Reflection Workflow Sequence" button doesn't call into `graph.py` yet; it just collects character + reflection_id on screen.
+**Where I left off:** The page-3 Submit button is wired — `_submit_workflow` reads the four
+inputs and calls `graph.reflection_workflow`. `ActionNode` / `BeliefNode` / `ReflectionNode` now
+define `__eq__`/`__hash__` (id + class based), and `edge_creation` registers both of its nodes
+into `node_dict` itself, so `reflection_workflow` no longer needs a separate registration loop —
+both open questions from the prior session are resolved (see below). The in-memory graph
+(`node_dict` / `adj_dict`) builds correctly but is **not persisted** — it resets every time
+`main.py` closes. Next decision is which persistence path to take (options laid out below,
+nothing chosen yet). Nothing renders the real graph on screen yet — the graph page (stack index 1)
+still shows the "No data yet" placeholder and `_graph_has_data()` is still hardcoded `False`.
 
-**What's actually right in this version (keep this):**
-- `Tool4Widget` (`tools/tool4_actions/ui.py`) is built and wired into `main.py`'s Notes tab, replacing the old placeholder label. Four-page `QStackedWidget`:
-  1. Menu — two nav boxes: "View Graph" / "No data yet" (label reflects `_graph_has_data()`, hardcoded `False` until `graph.py` has real persistence) and "Add Reflection Sequence to Graph".
-  2. Graph page — placeholder "No data yet" centred, reachable but not yet backed by real graph data.
-  3. Add-sequence page — reuses Tool 2's View Reflections format on purpose: character combo → reflection list → read-only details box, same row unpack and details string as Tool 2. Data path is `Hash.read_character(name)`, same as Tool 2. Confirmed choice: two-step character-then-reflection picker (not a flat list), and the NULL-character group shows in the dropdown same as Tool 2 (not filtered out).
-  4. Workflow-entry page — reached via "Begin Reflection Workflow Sequence" button on the add-sequence page. Has "Which character do you want" + a character dropdown (`workflow_character_combo`, populated fresh each open via `_open_workflow_id_page`), and a `QLineEdit` (`workflow_id_field`) placeholder "Enter the reflection_id you choose". Nothing reads these values yet — no submit/confirm action wired.
-- All four pages tested against the real DB (`init_db()` + `Hash.hashmap_initialise()`), navigation confirmed working both directions.
-- `Edge` v1 (`edge.py`) still stands, still passed review from prior sessions.
-- `node_creation` factory still stands, still routes all three node types through one function (case-sensitive lowercase match — see questions below).
+**Not yet verified against a live app run** — changes pass `py_compile` and `import`, but the
+Submit flow hasn't been driven through the running UI with a real reflection id.
 
-**Questions worth tracing through `reflection_workflow`:**
-- What does a `reflection_node` actually need in order to build itself — check its `__init__`. Does what `reflection_workflow` currently gathers and passes in match that, or is it fetching something by hand that's no longer needed?
-- `node_creation` does exact string comparisons to decide which node type to build. Do the three call sites in this function match what it's actually comparing against?
-- Look at the block that files the three nodes into `node_dict` — three lines building a key and appending. One of them does something to the name `node_dict` itself that changes how every other line in the function reads it. Find that line first, then check whether the other two are self-consistent with it, and whether the key shape matches what `edge_creation` builds elsewhere in the file.
-- `edge_creation` is defined to take three arguments. Count what's passed at the two call sites here.
+## What changed this session
 
-**Once it runs cleanly, two more things worth deciding:** what should happen if the typed `reflection_id` doesn't exist for the chosen character, and where the two built edges should actually end up (right now they're computed and never returned or stored).
+- **Page 3 (workflow-entry) gained the real inputs:**
+  - `QLabel("Reflection ID")` added above `workflow_id_field` (was placeholder-text only).
+  - `workflow_belief_box` (`QTextEdit`, multi-line) under *"What belief have you realised you hold from this?"*
+  - `workflow_action_box` (`QTextEdit`, multi-line) under *"What action will you take to oppose the belief?"*
+  - `workflow_submit_btn` ("Submit") → `_submit_workflow`.
+  - `workflow_status_label` under the button for pass/fail feedback.
+- **Persistence across the Back button:** the page is built once in `_build_ui`, so the text
+  boxes already keep their content across navigation. The one leak was `_open_workflow_id_page`
+  clearing + repopulating the character combo every visit (resetting to index 0) — it now saves
+  `currentText()` before the clear and restores it after.
+- **Character pickers on page 2 and page 3 kept independent** — deliberate decision ("won't fix
+  what's not broken"). Page 3 does not inherit page 2's selection.
+- **`_submit_workflow` implemented.** Contract lives as its header comment. Flow:
+  1. `int(self.workflow_id_field.text())` — `ValueError` → "Reflection ID must be a whole number." and stop.
+  2. `Hash.read_character(character_name)` wrapped in `try/except TypeError` (empty / NULL-character
+     slot — CLAUDE.md rough edge); `None` or falsy → "No reflections stored for '<name>'." and stop.
+  3. `graph.node_extraction(reflections, reflection_id) is None` → "No reflection with ID <id> for
+     '<name>'." and stop.
+  4. else `graph.reflection_workflow(reflection_id, reflections, belief, action)` (return ignored),
+     status → "Sequence added to graph for reflection <id>."
+  `belief` / `action` passed through as-is, blank allowed for now.
+- **Old `self._workflow_inputs` pause-point stash removed** — the real call supersedes it.
+- **New import in `ui.py`:** `from tools.tool4_actions import graph`. Confirmed no circular import —
+  `graph.py` → edge / *_node / collections only, never reaches back to `ui.py`.
+- **`graph.reflection_workflow` no longer returns the root `ReflectionNode`** (removed by hand this
+  session). Success and not-found now both look like `None` from outside — that's why the not-found
+  check moved *up front* into the UI (guard 3) instead of keying off the return.
+- **`__eq__` / `__hash__` added to `ActionNode`, `BeliefNode`, `ReflectionNode`** (`action_node.py`,
+  `belief_node.py`, `reflection_node.py`) — identical pattern in all three, deliberately duplicated
+  rather than pulled into a shared base (the three classes don't share one today; that's a bigger
+  structural change than this was). Equality/hash are keyed on `(type(self).__name__, self.id)` —
+  the same tuple `node_dict` already uses. `__eq__` returns `NotImplemented` for a non-matching
+  type rather than `False`, per convention. Verified: two independently-built `BeliefNode(5, ...)`
+  instances now compare equal, hash equal, and a dict keyed on one resolves via the other.
+  **Why:** without this, node objects only compared equal by memory identity — a node rebuilt from
+  persisted data (same id, same class, new object) would never match the pre-restart node in
+  `node_dict`/`adj_dict`. This was a live blocker for every persistence path being considered below.
+- **Node registration folded into `edge_creation`.** `edge_creation(node1, node2, info=None)` now
+  registers both endpoints into `node_dict` before building the `Edge`/appending to `adj_dict`.
+  `reflection_workflow`'s separate `for node in (...): node_dict[...] = node` loop was deleted —
+  registration now happens purely as a side effect of connecting nodes. **Why:** the old split kept
+  `node_dict` in sync with `adj_dict` only by caller discipline (remembering to run the loop before
+  calling `edge_creation`); a future caller that skipped the loop would produce an edge pointing at
+  an unregistered node, failing silently until something tried to resolve it. Folding registration
+  into the one function that creates connections makes that invariant impossible to violate instead
+  of just documented. Verified: `reflection_workflow` still populates `node_dict` with all three
+  entries and `adj_dict` with both edges, now via one path instead of two.
+  **Known limitation, not fixed:** a node passed to `node_creation` but never passed to
+  `edge_creation` (an isolated node) would never get registered. Not a real case in the current
+  fixed reflection→belief→action chain; would matter if a future node type can exist without edges.
 
-**Open architecture questions (still not answered — carried over, plus one new):**
-- (Carried over) Should `edge_creation` be the single entry point that both registers its two nodes into `node_dict` *and* builds+appends the `Edge` into `adj_dict`? Or keep node registration and edge creation as two deliberately separate calls?
-- (Carried over) `node_dict` shape — key → single object, or key → list? `reflection_workflow` currently `.append`s nodes into it (list shape), which matches neither your stated design ("what is this," implying single object) nor is done consistently anywhere else.
-- (New) Now that the UI collects `character_name` + `reflection_id` on the workflow-entry page, does `reflection_workflow` need a `belief`/`action` text input on that same page too, or is that a separate step/page? Right now the UI only gathers the first two of `reflection_workflow`'s four params.
+## Deviation from the confirmed `_submit_workflow` contract
 
-**Conclusions reached (don't re-derive these — still valid):**
-- `belief_node`/`action_node` ids are hand-typed with nothing backing them — unlike `reflection_node`, whose id is really read from the DB.
-- Combining nodes into one `{id: object}` dict collides on bare id; fix is keying by `(type(obj).__name__, obj.id)`.
-- Two separate structures needed: `node_dict` (key → object) and `adj_dict` (key → `list[Edge]`). Don't merge them.
-- `Edge` itself never computes the combined key — the caller builds `(type, id)` at the point where the real node object is in hand.
-- Naming note, still not resolved: `edge.py` uses `self.from_node_id`/`self.to_node_id`/`self.type`, design language elsewhere uses `from_id`/`to_id`/`edge_type`.
-- The hashmap's own structure (clarified this session, not a code change): `array[hash(character_name)]` → `{character_name: [row, row, ...]}` → each row is a full 9-field DB tuple. Reflection IDs are global/autoincrement across the whole table, not per-character — unique everywhere but not contiguous within one character's list, and never equal to list position.
-- `06_actions_tool.md` is still stale against this file and the actual code — update once `graph.py` runs cleanly.
+Guard (3) as agreed keyed off `reflection_workflow`'s return value. With the return removed, that
+signal is gone, so the not-found check is now done **before** the call via `graph.node_extraction`
+— graph's own lookup, not a reimplementation in the UI. Cost: the reflections list is scanned
+twice (once by the guard, once inside `reflection_workflow`). Flagged at implementation time, not
+changed silently.
 
-**Immediate next step:** Work through the questions above on `reflection_workflow`, starting with the `reflection_node` data-source one since it reframes what the function even needs to do. Decide the two carried-over architecture questions since they affect how the fix should be written, then wire the UI's "Begin Reflection Workflow Sequence" flow to actually call it with the character + reflection_id already being collected (plus wherever belief/action input ends up living).
+## Confirmed decisions this session (don't re-litigate)
 
-**Full design record:** `Project_files/06_actions_tool.md` (stale — see note above, don't treat its "Current build state" section as accurate right now)
+- Belief + action are entered on the **same page** as the ID + character picker (page 3), not a
+  separate step/page.
+- Prompt wording is fixed: *"What belief have you realised you hold from this?"* and
+  *"What action will you take to oppose the belief?"*
+- Submit **collects all four and calls the workflow**, then we pause — no graph-page rendering,
+  no navigation change on success yet.
+- **Growing graph is wanted:** `node_dict` / `adj_dict` accumulate across workflow runs within one
+  app session and are never reset in-process.
+- `QTextEdit` (multi-line) for belief and action, not `QLineEdit`.
+
+## Graph persistence — discussed, NOT decided
+
+Key realisation: the only genuinely new data a workflow run produces is **the belief string, the
+action string, and their attachment to a `reflection_id`**. `ReflectionNode` is a copy of a
+`Reflections` row; the edge chain shape is fixed (reflection → belief → action). So most paths
+collapse to something small.
+
+- **Path 1 — SQLite, one row per sequence.** `Action_Sequences(reflection_id FK, belief_text,
+  action_text, created_at)`. Rebuild nodes/edges at startup, one call per row. Smallest; matches
+  existing storage layer; makes `PRAGMA foreign_keys = ON` finally mean something. Encodes the
+  "always a 3-node chain" assumption.
+- **Path 2 — SQLite, generic `Graph_Nodes` + `Graph_Edges`.** Node table + edge list; adjacency
+  built in memory at load. Shape-agnostic, teaches adjacency-list vs edge-list. More machinery
+  than the data currently justifies (reflection nodes carry a NULL payload).
+- **Path 3 — belief/action as columns on `Reflections`** (or a sidecar keyed by `reflection_id`).
+  No separate graph persistence at all — the graph becomes a rebuilt in-memory index over
+  reflections that have belief+action filled in, exactly like `HashMap` over `Reflections`. Most
+  consistent with existing architecture. Commits hard to one-belief-one-action-per-reflection.
+- **Path 4 — JSON file.** Needs `to_dict` / `from_dict` per node class + tuple-key coercion
+  (`adj_dict` is keyed by node objects, `node_dict` by tuples — neither is JSON-native). Human
+  readable; hand-rolled serialization to maintain.
+- **Path 5 — `pickle`.** Rejected as a durable format: brittle across class renames/moves, not
+  human-readable.
+- **Path 6 — `networkx` / graph DB.** Overkill for a fixed 3-node chain; noted for awareness only.
+
+**Leaning:** path 3 or path 1 for consistency. Whichever: **do not persist the full
+`ReflectionNode`** — store only `reflection_id` and rebuild it from the `Reflections` row at load
+(one-shape-per-concept).
+
+## What's still true — keep this
+
+- 4-page `QStackedWidget` (`Tool4Widget`, `tools/tool4_actions/ui.py`), wired into `main.py`'s
+  Notes tab: Menu / Graph placeholder / Add-sequence (Tool 2 View-Reflections format) / Workflow-entry.
+- `Edge` v1, `node_creation` factory, `node_extraction`, `edge_creation`, and the
+  `node_dict` (`{(type_name, id): node}`) / `adj_dict` (`node object → list[Edge]` outgoing)
+  shapes all still stand from the prior session.
+- `node_creation` match strings are `"Action"` / `"Reflection"` / `"Belief"`; the three call
+  sites in `reflection_workflow` match.
+- `BeliefNode` / `ActionNode` ids are hand-passed the `reflection_id`, nothing backing them;
+  `ReflectionNode.id` comes from `data[0]` of the real DB row.
+- Hashmap structure: `array[hash(character_name)]` → `{character_name: [row, ...]}`, each row a
+  full 9-field DB tuple. Reflection ids are global autoincrement — unique everywhere, never equal
+  to list position.
+
+## Open questions (still open)
+
+- What does a successful Submit do for the UI — navigate to / refresh the graph page? Deferred.
+- Persistence path not chosen (above).
+
+## Resolved this session (don't re-derive)
+
+- ~~Should `edge_creation` be the single entry point that registers its two nodes into `node_dict`
+  *and* builds+appends the `Edge`?~~ **Yes, done.** See "Node registration folded into
+  `edge_creation`" above.
+- ~~`adj_dict` keyed by node object relies on identity hashing~~ **Fixed.** `__eq__`/`__hash__`
+  added to all three node classes, keyed on `(type(self).__name__, self.id)` — matching values now
+  compare/hash equal regardless of object identity. This was specifically unblocking persistence:
+  any DB-backed path rebuilds nodes at startup, and those rebuilt nodes now correctly match their
+  pre-restart counterparts.
+
+## Immediate next step
+
+Pick a persistence path — or explicitly defer it and build the graph-page rendering against the
+in-memory `node_dict` / `adj_dict` first (and replace the hardcoded `_graph_has_data()` with a
+real check). The identity-hashing blocker that would have hit any DB-backed path is now resolved
+(`__eq__`/`__hash__` in place), so persistence is no longer blocked on that — just on picking a path.
+
+## Habits this session (end-of-session check)
+
+- **Contract-first (current focus):** stated `_submit_workflow`'s contract, got sign-off, then
+  wrote the body; contract kept as the method header. The one forced deviation (guard 3, after the
+  return value was removed) was flagged and explained, not silently applied. Same pattern repeated
+  for `__eq__`/`__hash__` — contract stated and confirmed before writing.
+- **One shape per concept:** `reflection_id` as widget text vs the `int` passed onward — input
+  parsing, not a competing stored representation, so fine. Flagged that persistence must not store
+  the full `ReflectionNode` (would duplicate a `Reflections` row).
+- **Building ahead of consumers:** removed the now-superseded `self._workflow_inputs` stash rather
+  than leaving dead holding state in the file.
+- **Name the pattern (implicit contracts):** the `node_dict`/`adj_dict` sync problem was framed and
+  talked through explicitly — "a rule enforced by caller discipline instead of by the function
+  itself" — via Socratic questions before folding the fix into `edge_creation`, rather than just
+  silently refactoring it.
+
+**Full design record:** `Project_files/06_actions_tool.md` — still stale, update once a persistence
+path is chosen and the graph page renders real data.

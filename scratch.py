@@ -1,23 +1,23 @@
-from collections import defaultdict
-class Solution(object):
-    def firstUniqChar(self, s):
-        """
-        :type s: str
-        :rtype: int
-        """
-        character_dict=defaultdict(int)
-        for character in s:
-            if character_dict[character] >0:
-                character_dict[character]+=1
-            elif character_dict[character]==0:
-                character_dict[character]=1
+class Solution:
+    def twoSum(self, nums, target):
+        nums_set={}
 
-        for char in character_dict:
-            if character_dict[char] ==1:
-                return s.index(char)
-               
+        for i in range(len(nums)):
+            needed_value= target - nums[i]
+            if needed_value in nums_set: # there is a number which adds with our current number to make target
+                smaller_number_index=nums.index(needed_value)
+                
+                if i>smaller_number_index:
+                    return [smaller_number_index,i]
+                elif smaller_number_index>i:
+                    return[i,smaller_number_index]
+            else:
+                nums_set[nums[i]]=0
+
+
+
             
-        return -1
 
 
-   
+        
+        

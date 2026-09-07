@@ -8,6 +8,7 @@ from PyQt6.QtCore import Qt
 
 from db.database import get_all_character
 from shared.hash_instance import Hash
+from tools.tool4_actions import graph
 
 
 _STYLESHEET = """
@@ -254,18 +255,97 @@ class Tool4Widget(QWidget):
         self.workflow_character_combo = QComboBox()
         layout.addWidget(self.workflow_character_combo)
 
+        layout.addWidget(QLabel("Reflection ID"))
         self.workflow_id_field = QLineEdit()
         self.workflow_id_field.setPlaceholderText("Enter the reflection_id you choose")
         layout.addWidget(self.workflow_id_field)
+
+        layout.addWidget(QLabel("What belief have you realised you hold from this?"))
+        self.workflow_belief_box = QTextEdit()
+        layout.addWidget(self.workflow_belief_box)
+
+        layout.addWidget(QLabel("What action will you take to oppose the belief?"))
+        self.workflow_action_box = QTextEdit()
+        layout.addWidget(self.workflow_action_box)
+
+        self.workflow_submit_btn = QPushButton("Submit")
+        self.workflow_submit_btn.clicked.connect(self._submit_workflow)
+        layout.addWidget(self.workflow_submit_btn)
+
+        self.workflow_status_label = QLabel("")
+        layout.addWidget(self.workflow_status_label)
+
         layout.addStretch()
 
         self._stack.addWidget(page)
 
     def _open_workflow_id_page(self):
+        # Repopulate the character list but keep the current pick so page-3 inputs
+        # survive a Back-to-page-2-and-return (user reviewing their reflection mid-flow).
+        previous = self.workflow_character_combo.currentText()
         self.workflow_character_combo.clear()
         for row in get_all_character():
             self.workflow_character_combo.addItem(row[0])
+        if previous:
+            self.workflow_character_combo.setCurrentText(previous)
         self._stack.setCurrentIndex(3)
+
+    def _submit_workflow(self):
+        # _submit_workflow(self) -> None
+        #
+        # Fires on the page-3 Submit button. Turns the four page-3 widget values into
+        # arguments for graph.reflection_workflow and calls it. The graph grows in
+        # place — graph.py's module-level adj_dict / node_dict are extended, never
+        # reset here.
+        #
+        # Reads off the widgets:
+        #   character_name : str -- workflow_character_combo.currentText()
+        #   raw_id         : str -- workflow_id_field.text()
+        #   belief         : str -- workflow_belief_box.toPlainText()
+        #   action         : str -- workflow_action_box.toPlainText()
+        #
+        # Guards, in order — each writes workflow_status_label and returns early:
+        #   (1) reflection_id = int(raw_id); empty / non-numeric -> ValueError ->
+        #       "Reflection ID must be a whole number." and stop.
+        #   (2) reflections = Hash.read_character(character_name), wrapped so a None
+        #       return and a TypeError (empty / NULL-character slot — CLAUDE.md rough
+        #       edge) both -> "No reflections stored for '<name>'." and stop.
+        #   (3) reflection_workflow no longer returns a found/not-found signal, so the
+        #       not-found check is done here up front via graph.node_extraction
+        #       (graph's own lookup, not a reimplementation). None -> "No reflection
+        #       with ID <id> for '<name>'." and stop.
+        #
+        # belief / action are passed through as-is; blank is allowed for now.
+        character_name = self.workflow_character_combo.currentText()
+        belief = self.workflow_belief_box.toPlainText()
+        action = self.workflow_action_box.toPlainText()
+
+        try:
+            reflection_id = int(self.workflow_id_field.text())
+        except ValueError:
+            self.workflow_status_label.setText("Reflection ID must be a whole number.")
+            return
+
+        try:
+            reflections = Hash.read_character(character_name)
+        except TypeError:
+            reflections = None
+        if not reflections:
+            self.workflow_status_label.setText(
+                f"No reflections stored for '{character_name}'."
+            )
+            return
+
+        if graph.node_extraction(reflections, reflection_id) is None:
+            self.workflow_status_label.setText(
+                f"No reflection with ID {reflection_id} for '{character_name}'."
+            )
+            return
+
+        graph.reflection_workflow(reflection_id, reflections, belief, action)
+        self.workflow_status_label.setText(
+            f"Sequence added to graph for reflection {reflection_id}."
+        )
 
     def _open_add_sequence(self):
         self.sequence_character_combo.blockSignals(True)

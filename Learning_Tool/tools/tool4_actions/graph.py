@@ -1,10 +1,8 @@
 
-from platform import node
-from Learning_Tool.tools.tool4_actions import edge
 from tools.tool4_actions.edge import Edge
-from tools.tool4_actions.action_node import action_node
-from tools.tool4_actions.belief_node import belief_node
-from tools.tool4_actions.reflection_node import reflection_node
+from tools.tool4_actions.action_node import ActionNode
+from tools.tool4_actions.belief_node import BeliefNode
+from tools.tool4_actions.reflection_node import ReflectionNode
 from collections import defaultdict
 
 adj_dict=defaultdict(list) #Upon addition of new edges we can append to the existing edge list correctly not replace 
@@ -12,67 +10,58 @@ adj_dict=defaultdict(list) #Upon addition of new edges we can append to the exis
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 def node_creation(node_type,node_id,node_info): 
 #Consider how function might behave different if a reflection entry is passed in
-    if node_type == "action":
-        node_object=action_node(node_id,node_info)
+    if node_type == "Action":
+        node_object=ActionNode(node_id,node_info)
         return node_object
-    elif node_type == "reflection":
-        node_object=reflection_node(node_id,node_info)
+    elif node_type == "Reflection":
+        node_object=ReflectionNode(node_id,node_info)
         return node_object
-    elif node_type == "belief":
-        node_object=belief_node(node_id,node_info)
+    elif node_type == "Belief":
+        node_object=BeliefNode(node_id,node_info)
         return node_object
     else:
-        return ("Incorrect node name entered, ps Use lowercase")
+        return ("Incorrect node name entered")
 
 #Pass in all of that characters reflections and the reflection ID needed then iterate through that to extract which reflection_writing is needed.
 def node_extraction(c_reflections,ref_id):
     for reflection in c_reflections:
-        if ref_id == reflection.id:
-            return reflection.Reflection_Writing
+        if ref_id == reflection[0]:
+            return reflection
 
-#Creation of a node of each type
-musa_reflection= node_creation("reflection",2,"Musa")
-friend_situation=node_creation("belief",2,"Scared to speak the truth over holding others accountable")
-friend_action=node_creation("action",2,"Acknolodging to friends that i speak the truth in all situations no matter how close someone is to me")
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-#Is hardcoded for now but can be changed after
-adj_list=[[musa_reflection,friend_situation], [friend_situation,friend_action]] #used to know direction nodes are connected
-node_dict=defaultdict(list) #Upon addition of new edges we can append to the existing edge list correctly not replace 
-#Function to add the nodes from the defined edges
-def node_dict_create(adj_list_example):
-    for edge in adj_list_example:
+# node_dict: registry of every node, keyed by its identity (type name, id) -> the node object.
+# Lets an Edge's (type, id) tuple be resolved back to a live node. One entry per node, not a list.
+node_dict={}
 
-        node_dict[(type(edge[0]).__name__,edge[0].id)].append(edge[1])
-    return node_dict
-#Function to create adjacency dictionary
-#need combined keys creating
-def edge_creation(node1,node2,info):
-
+# adj_dict: adjacency list. Key is the node object itself, value is the list of Edges going out of it.
+def edge_creation(node1,node2,info=None):
+    # Registers both endpoints in node_dict before connecting them, so an edge can
+    # never exist without its nodes being resolvable — the caller no longer has to
+    # remember a separate registration step.
+    for node in (node1,node2):
+        node_dict[(type(node).__name__,node.id)]=node
 
     new_edge=Edge((type(node1).__name__,node1.id),(type(node2).__name__,node2.id),info)
-    adj_dict[type(node1).__name__,node1.id].append(new_edge)
+    adj_dict[node1].append(new_edge)
     return new_edge
 
 
-#Create an edge for musa_reflection to friend_situation
-edge_creation(musa_reflection,friend_situation,"surfaced through reflection")
-
 def reflection_workflow(reflection_id,reflections,belief,action):
 
-    chosen_reflection=node_extraction(reflection_id,reflections)
+    chosen_reflection=node_extraction(reflections,reflection_id)
+    if chosen_reflection is None:
+        # No reflection with that id in this character's list — build nothing.
+        return None
+
     reflection_node=node_creation("Reflection",reflection_id,chosen_reflection)
-    reflection_key=(reflection_id,"Reflection")
-    node_dict[reflection_key].append(reflection_node)
-
     belief_node=node_creation("Belief",reflection_id,belief)
-    belief_key=(reflection_id,"Belief")
-    node_dict=[belief_key].append(reflection_node)
-    Reflection_Belief_Edge=edge_creation(reflection_node,belief_node)
-
     action_node=node_creation("Action",reflection_id,action)
-    node_key=(reflection_id,"Action")
-    node_dict[node_key].append(belief_node)
-    Belief_Action_Edge=edge_creation(belief_node,action_node)
+
+    # Directed chain: reflection -> belief -> action. edge_creation registers both
+    # endpoints in node_dict itself, so no separate registration loop is needed here.
+    edge_creation(reflection_node,belief_node)
+    edge_creation(belief_node,action_node)
+
 
 
 
